@@ -35,7 +35,10 @@
         font-weight: 700;
     }
 
-    .slot-form input {
+    .slot-form input,
+    .profile-form input,
+    .profile-form select,
+    .profile-form textarea {
         width: 100%;
         padding: 14px 16px;
         border: 1px solid var(--line);
@@ -43,6 +46,38 @@
         background: var(--surface-soft);
         color: var(--text);
         font: inherit;
+    }
+
+    .profile-form textarea {
+        min-height: 92px;
+        resize: vertical;
+    }
+
+    .check-field {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        color: var(--navy);
+        font-weight: 800;
+    }
+
+    .check-field input {
+        width: auto;
+    }
+
+    .verify-note {
+        grid-column: 1 / -1;
+        padding: 12px 14px;
+        border-radius: 14px;
+        background: #fff7df;
+        color: #835c00;
+        font-weight: 700;
+        line-height: 1.5;
+    }
+
+    .verify-note.verified {
+        background: #e6faf5;
+        color: #0e7a64;
     }
 
     .slot-list {
@@ -224,6 +259,14 @@
                 {% csrf_token %}
                 <input type="hidden" name="form_type" value="profile">
 
+                <div class="verify-note {% if doctor.is_verified %}verified{% endif %}">
+                    {% if doctor.is_verified %}
+                        Your profile is verified and visible to patients.
+                    {% else %}
+                        Your profile will be visible to patients after admin verification.
+                    {% endif %}
+                </div>
+
                 <div>
                     <label for="name">Doctor Name</label>
                     <input type="text" id="name" name="name" value="{{ doctor.name }}">
@@ -264,9 +307,64 @@
                     <input type="number" min="0" id="review_count" name="review_count" value="{{ doctor.review_count }}">
                 </div>
 
+                <div>
+                    <label for="hospital_name">Hospital / Clinic Name</label>
+                    <input type="text" id="hospital_name" name="hospital_name" value="{{ doctor.hospital_name }}" placeholder="Clinic or hospital name">
+                </div>
+
+                <div>
+                    <label for="district">District</label>
+                    <input type="text" id="district" name="district" value="{{ doctor.district }}" placeholder="District">
+                </div>
+
+                <div>
+                    <label for="city_or_block">City / Block</label>
+                    <input type="text" id="city_or_block" name="city_or_block" value="{{ doctor.city_or_block }}" placeholder="City or block">
+                </div>
+
+                <div>
+                    <label for="village_or_area">Village / Area</label>
+                    <input type="text" id="village_or_area" name="village_or_area" value="{{ doctor.village_or_area }}" placeholder="Village, ward, or area">
+                </div>
+
+                <div>
+                    <label for="latitude">Latitude</label>
+                    <input type="number" step="0.000001" id="latitude" name="latitude" value="{{ doctor.latitude|default_if_none:'' }}">
+                </div>
+
+                <div>
+                    <label for="longitude">Longitude</label>
+                    <input type="number" step="0.000001" id="longitude" name="longitude" value="{{ doctor.longitude|default_if_none:'' }}">
+                </div>
+
+                <div>
+                    <label for="consultation_mode">Consultation Mode</label>
+                    <select id="consultation_mode" name="consultation_mode">
+                        <option value="offline" {% if doctor.consultation_mode == "offline" %}selected{% endif %}>Offline</option>
+                        <option value="online" {% if doctor.consultation_mode == "online" %}selected{% endif %}>Online</option>
+                        <option value="both" {% if doctor.consultation_mode == "both" %}selected{% endif %}>Online and Offline</option>
+                    </select>
+                </div>
+
+                <div>
+                    <label class="check-field" for="is_emergency_available">
+                        <input type="checkbox" id="is_emergency_available" name="is_emergency_available" {% if doctor.is_emergency_available %}checked{% endif %}>
+                        Emergency available
+                    </label>
+                </div>
+
                 <div class="field-full">
                     <label for="photo_url">Photo URL</label>
                     <input type="url" id="photo_url" name="photo_url" value="{{ doctor.photo_url }}" placeholder="Paste doctor profile image URL">
+                </div>
+
+                <div class="field-full">
+                    <label for="full_address">Full Address</label>
+                    <textarea id="full_address" name="full_address" placeholder="Complete clinic address">{{ doctor.full_address }}</textarea>
+                </div>
+
+                <div class="field-full">
+                    <button type="button" class="btn btn-secondary" id="fill-location">Use Current Location</button>
                 </div>
 
                 <div class="field-full">
@@ -341,4 +439,21 @@
         </div>
     </section>
 </div>
+<script>
+    const locationButton = document.getElementById("fill-location");
+
+    locationButton.addEventListener("click", () => {
+        if (!navigator.geolocation) {
+            alert("Location is not available in this browser.");
+            return;
+        }
+
+        navigator.geolocation.getCurrentPosition((position) => {
+            document.getElementById("latitude").value = position.coords.latitude.toFixed(6);
+            document.getElementById("longitude").value = position.coords.longitude.toFixed(6);
+        }, () => {
+            alert("Location permission nahi mili. Latitude aur longitude manually fill kar sakte hain.");
+        });
+    });
+</script>
 {% endblock %}

@@ -94,6 +94,33 @@
         font: inherit;
     }
 
+    .doctor-extra {
+        grid-column: 1 / -1;
+        display: none;
+        grid-template-columns: 1fr 1fr;
+        gap: 16px;
+        padding: 18px;
+        border: 1px solid var(--line);
+        border-radius: 18px;
+        background: var(--surface-soft);
+    }
+
+    .doctor-extra.is-visible {
+        display: grid;
+    }
+
+    .check-field {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        color: var(--navy);
+        font-weight: 800;
+    }
+
+    .check-field input {
+        width: auto;
+    }
+
     .register-foot {
         margin-top: 14px;
         color: var(--muted);
@@ -110,6 +137,10 @@
         }
 
         .register-form {
+            grid-template-columns: 1fr;
+        }
+
+        .doctor-extra {
             grid-template-columns: 1fr;
         }
     }
@@ -175,6 +206,78 @@
                 </select>
             </div>
 
+            <div class="doctor-extra" id="doctor-extra">
+                <div class="field-full">
+                    <label for="hospital_name">Hospital / Clinic Name</label>
+                    <input type="text" id="hospital_name" name="hospital_name" placeholder="Clinic, hospital, or practice name">
+                </div>
+
+                <div>
+                    <label for="specialization">Specialization</label>
+                    <input type="text" id="specialization" name="specialization" placeholder="General Physician, Dentist, etc.">
+                </div>
+
+                <div>
+                    <label for="phone_no">Phone</label>
+                    <input type="text" id="phone_no" name="phone_no" placeholder="Patient contact number">
+                </div>
+
+                <div>
+                    <label for="whatsapp_number">WhatsApp Number</label>
+                    <input type="text" id="whatsapp_number" name="whatsapp_number" placeholder="919876543210">
+                </div>
+
+                <div>
+                    <label for="district">District</label>
+                    <input type="text" id="district" name="district" placeholder="District">
+                </div>
+
+                <div>
+                    <label for="city_or_block">City / Block</label>
+                    <input type="text" id="city_or_block" name="city_or_block" placeholder="City or block">
+                </div>
+
+                <div>
+                    <label for="village_or_area">Village / Area</label>
+                    <input type="text" id="village_or_area" name="village_or_area" placeholder="Village, ward, or area">
+                </div>
+
+                <div>
+                    <label for="consultation_mode">Consultation Mode</label>
+                    <select id="consultation_mode" name="consultation_mode">
+                        <option value="offline">Offline</option>
+                        <option value="online">Online</option>
+                        <option value="both">Online and Offline</option>
+                    </select>
+                </div>
+
+                <div class="field-full">
+                    <label for="full_address">Full Address</label>
+                    <input type="text" id="full_address" name="full_address" placeholder="Complete clinic address">
+                </div>
+
+                <div>
+                    <label for="latitude">Latitude</label>
+                    <input type="number" step="0.000001" id="latitude" name="latitude" placeholder="Use current location">
+                </div>
+
+                <div>
+                    <label for="longitude">Longitude</label>
+                    <input type="number" step="0.000001" id="longitude" name="longitude" placeholder="Use current location">
+                </div>
+
+                <div class="field-full">
+                    <label class="check-field" for="is_emergency_available">
+                        <input type="checkbox" id="is_emergency_available" name="is_emergency_available">
+                        Emergency patients available
+                    </label>
+                </div>
+
+                <div class="field-full">
+                    <button type="button" class="btn btn-secondary" id="fill-location">Use Current Location</button>
+                </div>
+            </div>
+
             <div class="field-full">
                 <label for="password">Password</label>
                 <input type="password" id="password" name="password" placeholder="Create password" required>
@@ -188,4 +291,31 @@
         <p class="register-foot">Already registered? <a href="/login/">Login here</a></p>
     </div>
 </section>
+<script>
+    const roleSelect = document.getElementById("role");
+    const doctorExtra = document.getElementById("doctor-extra");
+    const locationButton = document.getElementById("fill-location");
+
+    function toggleDoctorFields() {
+        const selectedText = roleSelect.options[roleSelect.selectedIndex]?.text.toLowerCase() || "";
+        doctorExtra.classList.toggle("is-visible", selectedText.includes("doctor"));
+    }
+
+    roleSelect.addEventListener("change", toggleDoctorFields);
+    toggleDoctorFields();
+
+    locationButton.addEventListener("click", () => {
+        if (!navigator.geolocation) {
+            alert("Location is not available in this browser.");
+            return;
+        }
+
+        navigator.geolocation.getCurrentPosition((position) => {
+            document.getElementById("latitude").value = position.coords.latitude.toFixed(6);
+            document.getElementById("longitude").value = position.coords.longitude.toFixed(6);
+        }, () => {
+            alert("Location permission nahi mili. Latitude aur longitude manually fill kar sakte hain.");
+        });
+    });
+</script>
 {% endblock %}

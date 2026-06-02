@@ -1,4 +1,5 @@
 from datetime import datetime
+from math import atan2, cos, radians, sin, sqrt
 
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
@@ -6,6 +7,31 @@ from django.db.models import Q
 from django.shortcuts import get_object_or_404, redirect, render
 from django.utils.timezone import localdate
 from .models import Availability, Doctor
+
+
+def _parse_coordinate(value):
+    try:
+        coordinate = float(value)
+    except (TypeError, ValueError):
+        return None
+    return coordinate
+
+
+def _distance_km(lat1, lon1, lat2, lon2):
+    if None in {lat1, lon1, lat2, lon2}:
+        return None
+
+    earth_radius_km = 6371
+    delta_latitude = radians(lat2 - lat1)
+    delta_longitude = radians(lon2 - lon1)
+    start_latitude = radians(lat1)
+    end_latitude = radians(lat2)
+
+    a = (
+        sin(delta_latitude / 2) ** 2
+        + cos(start_latitude) * cos(end_latitude) * sin(delta_longitude / 2) ** 2
+    )
+    return earth_radius_km * 2 * atan2(sqrt(a), sqrt(1 - a))
 
 
 def _get_available_slots(doctor, today):
@@ -21,16 +47,38 @@ def doctor_list(request):
     query = request.GET.get("q", "").strip()
     availability_filter = request.GET.get("availability", "").strip()
     specialization_filter = request.GET.get("specialization", "").strip()
+    district_filter = request.GET.get("district", "").strip()
+    location_filter = request.GET.get("location", "").strip()
+    emergency_filter = request.GET.get("emergency", "").strip()
+    mode_filter = request.GET.get("mode", "").strip()
+    patient_latitude = _parse_coordinate(request.GET.get("lat"))
+    patient_longitude = _parse_coordinate(request.GET.get("lng"))
 
-    doctors = Doctor.objects.prefetch_related("availability_set").order_by("name", "user__username")
+    doctors = Doctor.objects.filter(is_verified=True).prefetch_related("availability_set").order_by("name", "user__username")
     if query:
         doctors = doctors.filter(
             Q(name__icontains=query)
             | Q(specialization__icontains=query)
             | Q(user__username__icontains=query)
+            | Q(hospital_name__icontains=query)
+            | Q(district__icontains=query)
+            | Q(city_or_block__icontains=query)
+            | Q(village_or_area__icontains=query)
         )
     if specialization_filter:
         doctors = doctors.filter(specialization__iexact=specialization_filter)
+    if district_filter:
+        doctors = doctors.filter(district__iexact=district_filter)
+    if location_filter:
+        doctors = doctors.filter(
+            Q(city_or_block__icontains=location_filter)
+            | Q(village_or_area__icontains=location_filter)
+            | Q(full_address__icontains=location_filter)
+        )
+    if emergency_filter == "yes":
+        doctors = doctors.filter(is_emergency_available=True)
+    if mode_filter:
+        doctors = doctors.filter(Q(consultation_mode=mode_filter) | Q(consultation_mode="both"))
 
     doctor_cards = []
     today = localdate()
@@ -41,12 +89,29 @@ def doctor_list(request):
         if availability_filter == "open" and not available_slots:
             continue
 
+        distance = _distance_km(
+            patient_latitude,
+            patient_longitude,
+            float(doctor.latitude) if doctor.latitude is not None else None,
+            float(doctor.longitude) if doctor.longitude is not None else None,
+        )
+
         doctor_cards.append(
             {
                 "doctor": doctor,
                 "available_slots": len(available_slots),
                 "next_slot": next_slot,
+                "distance_km": round(distance, 1) if distance is not None else None,
             }
+        )
+
+    if patient_latitude is not None and patient_longitude is not None:
+        doctor_cards.sort(
+            key=lambda item: (
+                item["distance_km"] is None,
+                item["distance_km"] if item["distance_km"] is not None else 999999,
+                item["doctor"].name or item["doctor"].user.username,
+            )
         )
 
     return render(
@@ -58,15 +123,24 @@ def doctor_list(request):
             "search_query": query,
             "availability_filter": availability_filter,
             "specialization_filter": specialization_filter,
+            "district_filter": district_filter,
+            "location_filter": location_filter,
+            "emergency_filter": emergency_filter,
+            "mode_filter": mode_filter,
+            "patient_latitude": request.GET.get("lat", ""),
+            "patient_longitude": request.GET.get("lng", ""),
             "specializations": [
-                item for item in Doctor.objects.exclude(specialization="").values_list("specialization", flat=True).distinct().order_by("specialization")
+                item for item in Doctor.objects.filter(is_verified=True).exclude(specialization="").values_list("specialization", flat=True).distinct().order_by("specialization")
+            ],
+            "districts": [
+                item for item in Doctor.objects.filter(is_verified=True).exclude(district="").values_list("district", flat=True).distinct().order_by("district")
             ],
         },
     )
 
 
 def doctor_detail(request, doctor_id):
-    doctor = get_object_or_404(Doctor.objects.prefetch_related("availability_set"), id=doctor_id)
+    doctor = get_object_or_404(Doctor.objects.filter(is_verified=True).prefetch_related("availability_set"), id=doctor_id)
     today = localdate()
     available_slots = _get_available_slots(doctor, today)
 
@@ -103,6 +177,15 @@ def manage_availability(request):
             doctor.consultation_fee = request.POST.get("consultation_fee") or 0
             doctor.rating = request.POST.get("rating") or 4.5
             doctor.review_count = request.POST.get("review_count") or 0
+            doctor.hospital_name = request.POST.get("hospital_name", "").strip()
+            doctor.district = request.POST.get("district", "").strip()
+            doctor.city_or_block = request.POST.get("city_or_block", "").strip()
+            doctor.village_or_area = request.POST.get("village_or_area", "").strip()
+            doctor.full_address = request.POST.get("full_address", "").strip()
+            doctor.latitude = request.POST.get("latitude") or None
+            doctor.longitude = request.POST.get("longitude") or None
+            doctor.is_emergency_available = request.POST.get("is_emergency_available") == "on"
+            doctor.consultation_mode = request.POST.get("consultation_mode") or "offline"
             doctor.save(
                 update_fields=[
                     "name",
@@ -114,6 +197,15 @@ def manage_availability(request):
                     "consultation_fee",
                     "rating",
                     "review_count",
+                    "hospital_name",
+                    "district",
+                    "city_or_block",
+                    "village_or_area",
+                    "full_address",
+                    "latitude",
+                    "longitude",
+                    "is_emergency_available",
+                    "consultation_mode",
                 ]
             )
             messages.success(request, "Doctor profile updated successfully.")

@@ -43,6 +43,18 @@ def register(request):
                 defaults={
                     'name': full_name or username,
                     'email_id': email or '',
+                    'hospital_name': request.POST.get('hospital_name', '').strip(),
+                    'specialization': request.POST.get('specialization', '').strip(),
+                    'phone_no': request.POST.get('phone_no', '').strip(),
+                    'whatsapp_number': request.POST.get('whatsapp_number', '').strip(),
+                    'district': request.POST.get('district', '').strip(),
+                    'city_or_block': request.POST.get('city_or_block', '').strip(),
+                    'village_or_area': request.POST.get('village_or_area', '').strip(),
+                    'full_address': request.POST.get('full_address', '').strip(),
+                    'latitude': request.POST.get('latitude') or None,
+                    'longitude': request.POST.get('longitude') or None,
+                    'consultation_mode': request.POST.get('consultation_mode') or 'offline',
+                    'is_emergency_available': request.POST.get('is_emergency_available') == 'on',
                 }
             )
         else:

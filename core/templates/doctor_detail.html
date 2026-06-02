@@ -113,6 +113,12 @@
 
         <h1>{{ doctor.name|default:doctor.user.username }}</h1>
         <p>{{ doctor.specialization|default:"General consultation" }}</p>
+        {% if doctor.hospital_name %}
+            <p>Clinic: {{ doctor.hospital_name }}</p>
+        {% endif %}
+        {% if doctor.location_label %}
+            <p>Location: {{ doctor.location_label }}</p>
+        {% endif %}
         <p>Email: {{ doctor.email_id|default:doctor.user.email|default:"Not added yet" }}</p>
         <p>Phone: {{ doctor.phone_no|default:"Not added yet" }}</p>
 
@@ -135,9 +141,23 @@
     <div class="card detail-card">
         <h2>Doctor Profile</h2>
         <p style="color: var(--muted); line-height: 1.7;">
-            This specialist is available for streamlined online booking with clear fees, ratings,
-            and visible upcoming slots.
+            This verified doctor profile includes clinic location, direct contact details,
+            consultation mode, and visible upcoming slots.
         </p>
+
+        <p><strong>Consultation mode:</strong> {{ doctor.get_consultation_mode_display }}</p>
+        <p><strong>Emergency available:</strong> {% if doctor.is_emergency_available %}Yes{% else %}No{% endif %}</p>
+        {% if doctor.full_address %}
+            <p><strong>Address:</strong> {{ doctor.full_address }}</p>
+        {% endif %}
+        {% if doctor.latitude and doctor.longitude %}
+            <p>
+                <strong>Map:</strong>
+                <a href="https://www.google.com/maps/search/?api=1&query={{ doctor.latitude }},{{ doctor.longitude }}" target="_blank" rel="noopener">
+                    Open clinic location
+                </a>
+            </p>
+        {% endif %}
 
         <p><strong>Next available:</strong>
             {% if next_slot %}

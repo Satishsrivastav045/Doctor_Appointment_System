@@ -111,7 +111,7 @@
 
     .filter-bar {
         display: grid;
-        grid-template-columns: 2fr 1fr 1fr auto;
+        grid-template-columns: 2fr 1fr 1fr 1fr;
         gap: 14px;
         padding: 18px;
         margin-bottom: 28px;
@@ -132,6 +132,13 @@
         font-weight: 600;
         width: 100%;
         font: inherit;
+    }
+
+    .filter-actions {
+        grid-column: 1 / -1;
+        display: flex;
+        gap: 12px;
+        flex-wrap: wrap;
     }
 
     .trust-row {
@@ -459,6 +466,8 @@
 
 <form class="filter-bar" method="GET" action="">
     <input class="filter-pill" type="text" name="q" value="{{ search_query }}" placeholder="Search doctors, username, or specialization">
+    <input type="hidden" id="lat" name="lat" value="{{ patient_latitude }}">
+    <input type="hidden" id="lng" name="lng" value="{{ patient_longitude }}">
 
     <select class="filter-select" name="specialization">
         <option value="">All specializations</option>
@@ -469,12 +478,38 @@
         {% endfor %}
     </select>
 
+    <select class="filter-select" name="district">
+        <option value="">All districts</option>
+        {% for district in districts %}
+            <option value="{{ district }}" {% if district_filter == district %}selected{% endif %}>
+                {{ district }}
+            </option>
+        {% endfor %}
+    </select>
+
+    <input class="filter-pill" type="text" name="location" value="{{ location_filter }}" placeholder="Village, block, or area">
+
     <select class="filter-select" name="availability">
         <option value="">Any availability</option>
         <option value="open" {% if availability_filter == 'open' %}selected{% endif %}>Open slots only</option>
     </select>
 
-    <button type="submit" class="btn">Find Doctors</button>
+    <select class="filter-select" name="emergency">
+        <option value="">Any emergency status</option>
+        <option value="yes" {% if emergency_filter == 'yes' %}selected{% endif %}>Emergency only</option>
+    </select>
+
+    <select class="filter-select" name="mode">
+        <option value="">Any mode</option>
+        <option value="offline" {% if mode_filter == 'offline' %}selected{% endif %}>Offline</option>
+        <option value="online" {% if mode_filter == 'online' %}selected{% endif %}>Online</option>
+    </select>
+
+    <div class="filter-actions">
+        <button type="submit" class="btn">Find Doctors</button>
+        <button type="button" class="btn btn-secondary" id="use-location">Use My Location</button>
+        <a href="/" class="btn btn-secondary">Clear</a>
+    </div>
 </form>
 
 <section id="doctor-list">
@@ -510,9 +545,22 @@
 
                     <h3>{{ item.doctor.name|default:item.doctor.user.username }}</h3>
                     <p>{{ item.doctor.specialization|default:"General consultation" }}</p>
+                    {% if item.doctor.hospital_name %}
+                        <p><strong>{{ item.doctor.hospital_name }}</strong></p>
+                    {% endif %}
+                    {% if item.doctor.location_label %}
+                        <p>{{ item.doctor.location_label }}</p>
+                    {% endif %}
 
                     <div class="tags">
                         <span class="tag">{{ item.available_slots }} slot{{ item.available_slots|pluralize }} open</span>
+                        {% if item.distance_km is not None %}
+                            <span class="tag">{{ item.distance_km }} km away</span>
+                        {% endif %}
+                        {% if item.doctor.is_emergency_available %}
+                            <span class="tag">Emergency available</span>
+                        {% endif %}
+                        <span class="tag">{{ item.doctor.get_consultation_mode_display }}</span>
                         <span class="tag">{{ item.doctor.rating }}/5 rating</span>
                         <span class="tag">{{ item.doctor.review_count }} review{{ item.doctor.review_count|pluralize }}</span>
                         <span class="tag">{{ item.doctor.email_id|default:item.doctor.user.email|default:"Email pending" }}</span>
@@ -553,23 +601,41 @@
     <div class="info-card">
         <h3>Why Patients Like This Flow</h3>
         <p>
-            The page puts search intent, trust cues, and appointment decisions in one place so users
-            can move from browsing to booking without confusion.
+            Location-based filters help rural patients quickly see nearby verified doctors, direct
+            contact actions, and emergency availability.
         </p>
     </div>
     <div class="info-card">
         <h3>What Doctors Need</h3>
         <p>
-            Clear specialization, visible next slot, and fast booking buttons make profiles feel more
-            professional and easier to compare.
+            Doctors can publish clinic address, district, village, phone, WhatsApp, mode, and map
+            coordinates from their profile page.
         </p>
     </div>
     <div class="info-card">
         <h3>Profile Richness</h3>
         <p>
-            Fees, ratings, reviews, profile pages, and direct contact actions now make doctor discovery
-            feel closer to a real healthcare product.
+            Admin verification keeps new doctors hidden until their profile is checked, making the
+            public directory safer for patients.
         </p>
     </div>
 </section>
+<script>
+    const useLocationButton = document.getElementById("use-location");
+
+    useLocationButton.addEventListener("click", () => {
+        if (!navigator.geolocation) {
+            alert("Location is not available in this browser.");
+            return;
+        }
+
+        navigator.geolocation.getCurrentPosition((position) => {
+            document.getElementById("lat").value = position.coords.latitude.toFixed(6);
+            document.getElementById("lng").value = position.coords.longitude.toFixed(6);
+            useLocationButton.closest("form").submit();
+        }, () => {
+            alert("Location permission nahi mili. District ya village search se doctor dhoondh sakte hain.");
+        });
+    });
+</script>
 {% endblock %}

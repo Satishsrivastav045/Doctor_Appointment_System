@@ -38,6 +38,7 @@ class AppointmentFlowTests(TestCase):
             name="Dr Test",
             specialization="General Physician",
             email_id="clinic@example.com",
+            is_verified=True,
         )
         self.slot = Availability.objects.create(
             doctor=self.doctor,

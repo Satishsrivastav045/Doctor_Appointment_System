@@ -223,7 +223,7 @@ def book_appointment(request, doctor_id):
         messages.error(request, "Only patients can book appointments.")
         return redirect('/doctor-dashboard/')
 
-    doctor = get_object_or_404(Doctor, id=doctor_id)
+    doctor = get_object_or_404(Doctor, id=doctor_id, is_verified=True)
     patient = get_object_or_404(Patient, user=request.user)
 
     # Sirf unbooked slots hi dikhayein.
