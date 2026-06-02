@@ -1,0 +1,173 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<style>
+    .detail-layout {
+        display: grid;
+        grid-template-columns: 0.9fr 1.1fr;
+        gap: 22px;
+    }
+
+    .detail-hero {
+        background:
+            radial-gradient(circle at top right, rgba(255,255,255,0.24), transparent 28%),
+            linear-gradient(145deg, var(--navy) 0%, #174a67 58%, #1aa6a0 100%);
+        color: white;
+        border-radius: var(--radius-xl);
+        padding: 30px;
+        box-shadow: var(--shadow);
+    }
+
+    .detail-photo {
+        width: 130px;
+        height: 130px;
+        border-radius: 28px;
+        overflow: hidden;
+        background: rgba(255,255,255,0.15);
+        display: grid;
+        place-items: center;
+        font-size: 44px;
+        font-weight: 800;
+        margin-bottom: 18px;
+    }
+
+    .detail-photo img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        display: block;
+    }
+
+    .detail-hero h1 {
+        margin: 0 0 10px;
+        font-size: 40px;
+    }
+
+    .detail-hero p {
+        color: rgba(255,255,255,0.84);
+        line-height: 1.7;
+        margin: 8px 0;
+    }
+
+    .metric-row {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 14px;
+        margin-top: 18px;
+    }
+
+    .metric-box {
+        padding: 16px;
+        border-radius: 18px;
+        background: rgba(255,255,255,0.11);
+    }
+
+    .metric-box strong {
+        display: block;
+        font-size: 26px;
+        margin-bottom: 6px;
+    }
+
+    .detail-card h2 {
+        margin: 0 0 12px;
+        color: var(--navy);
+        font-size: 30px;
+    }
+
+    .slot-preview {
+        display: grid;
+        gap: 12px;
+        margin: 18px 0;
+    }
+
+    .slot-preview-item {
+        padding: 16px 18px;
+        border-radius: 18px;
+        background: var(--surface-soft);
+        border: 1px solid var(--line);
+    }
+
+    .cta-row {
+        display: flex;
+        gap: 12px;
+        flex-wrap: wrap;
+    }
+
+    @media (max-width: 900px) {
+        .detail-layout,
+        .metric-row {
+            grid-template-columns: 1fr;
+        }
+    }
+</style>
+
+<section class="detail-layout">
+    <div class="detail-hero">
+        <div class="detail-photo">
+            {% if doctor.photo_url %}
+                <img src="{{ doctor.photo_url }}" alt="{{ doctor.name|default:doctor.user.username }}">
+            {% else %}
+                {{ doctor.name|default:doctor.user.username|slice:":1"|upper }}
+            {% endif %}
+        </div>
+
+        <h1>{{ doctor.name|default:doctor.user.username }}</h1>
+        <p>{{ doctor.specialization|default:"General consultation" }}</p>
+        <p>Email: {{ doctor.email_id|default:doctor.user.email|default:"Not added yet" }}</p>
+        <p>Phone: {{ doctor.phone_no|default:"Not added yet" }}</p>
+
+        <div class="metric-row">
+            <div class="metric-box">
+                <strong>Rs. {{ doctor.consultation_fee }}</strong>
+                <span>Consultation fee</span>
+            </div>
+            <div class="metric-box">
+                <strong>{{ doctor.rating }}/5</strong>
+                <span>Average rating</span>
+            </div>
+            <div class="metric-box">
+                <strong>{{ doctor.review_count }}</strong>
+                <span>Reviews</span>
+            </div>
+        </div>
+    </div>
+
+    <div class="card detail-card">
+        <h2>Doctor Profile</h2>
+        <p style="color: var(--muted); line-height: 1.7;">
+            This specialist is available for streamlined online booking with clear fees, ratings,
+            and visible upcoming slots.
+        </p>
+
+        <p><strong>Next available:</strong>
+            {% if next_slot %}
+                {{ next_slot.available_date }} | {{ next_slot.start_time }} - {{ next_slot.end_time }}
+            {% else %}
+                No open slots right now.
+            {% endif %}
+        </p>
+
+        <div class="slot-preview">
+            {% for slot in available_slots %}
+                <div class="slot-preview-item">
+                    <strong>{{ slot.available_date }}</strong><br>
+                    <span>{{ slot.start_time }} - {{ slot.end_time }}</span>
+                </div>
+            {% empty %}
+                <div class="slot-preview-item">
+                    <span>No availability published yet.</span>
+                </div>
+            {% endfor %}
+        </div>
+
+        <div class="cta-row">
+            <a href="{% url 'book_appointment' doctor.id %}" class="btn">Book Appointment</a>
+            {% if doctor.whatsapp_number %}
+                <a href="https://wa.me/{{ doctor.whatsapp_number }}" class="btn btn-secondary" target="_blank" rel="noopener">WhatsApp Doctor</a>
+            {% elif doctor.phone_no %}
+                <a href="tel:{{ doctor.phone_no }}" class="btn btn-secondary">Call Doctor</a>
+            {% endif %}
+        </div>
+    </div>
+</section>
+{% endblock %}

@@ -1,0 +1,186 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<style>
+    .auth-shell {
+        max-width: 1020px;
+        margin: 10px auto 0;
+        display: grid;
+        grid-template-columns: 1.05fr 0.95fr;
+        gap: 22px;
+        align-items: stretch;
+    }
+
+    .auth-hero {
+        background:
+            radial-gradient(circle at top left, rgba(255, 255, 255, 0.24), transparent 24%),
+            linear-gradient(135deg, var(--navy) 0%, #1a5777 60%, #1aa6a0 100%);
+        color: white;
+        border-radius: var(--radius-xl);
+        padding: 34px;
+        box-shadow: var(--shadow);
+    }
+
+    .auth-hero h1 {
+        margin: 0 0 14px;
+        font-size: clamp(34px, 5vw, 52px);
+        line-height: 1.02;
+        max-width: 9ch;
+    }
+
+    .auth-hero p {
+        margin: 0;
+        color: rgba(255, 255, 255, 0.82);
+        line-height: 1.7;
+        max-width: 50ch;
+    }
+
+    .auth-points {
+        display: grid;
+        gap: 12px;
+        margin-top: 24px;
+    }
+
+    .auth-point {
+        padding: 14px 16px;
+        border-radius: 18px;
+        background: rgba(255, 255, 255, 0.1);
+        font-weight: 700;
+    }
+
+    .auth-card {
+        padding: 28px;
+    }
+
+    .auth-card h2 {
+        margin: 0 0 8px;
+        color: var(--navy);
+        font-size: 32px;
+    }
+
+    .auth-card p {
+        margin: 0 0 22px;
+        color: var(--muted);
+        line-height: 1.6;
+    }
+
+    .auth-form {
+        display: grid;
+        gap: 16px;
+    }
+
+    .field label {
+        display: block;
+        margin-bottom: 8px;
+        color: var(--navy);
+        font-weight: 700;
+    }
+
+    .field input {
+        width: 100%;
+        padding: 14px 16px;
+        border: 1px solid var(--line);
+        border-radius: 14px;
+        background: var(--surface-soft);
+        color: var(--text);
+        font: inherit;
+    }
+
+    .auth-foot {
+        margin-top: 14px;
+        color: var(--muted);
+    }
+
+    .auth-foot a {
+        color: var(--accent-deep);
+        font-weight: 800;
+    }
+
+    .demo-logins {
+        display: grid;
+        gap: 12px;
+        margin-top: 18px;
+    }
+
+    .demo-login {
+        padding: 14px;
+        border-radius: 16px;
+        background: var(--surface-soft);
+        border: 1px solid var(--line);
+    }
+
+    .demo-login strong {
+        display: block;
+        color: var(--navy);
+        margin-bottom: 6px;
+    }
+
+    .demo-login code {
+        display: inline-flex;
+        margin: 3px 6px 0 0;
+        padding: 5px 8px;
+        border-radius: 8px;
+        background: white;
+        color: var(--accent-deep);
+        font-family: inherit;
+        font-weight: 800;
+    }
+
+    @media (max-width: 900px) {
+        .auth-shell {
+            grid-template-columns: 1fr;
+        }
+    }
+</style>
+
+<section class="auth-shell">
+    <div class="auth-hero">
+        <h1>Welcome back to Doctor Saheb</h1>
+        <p>
+            Sign in to manage appointments, check booking updates, and continue your care journey
+            with a cleaner clinic-style experience.
+        </p>
+        <div class="auth-points">
+            <div class="auth-point">Fast patient booking visibility</div>
+            <div class="auth-point">Doctor approval and slot control</div>
+            <div class="auth-point">One dashboard for every update</div>
+        </div>
+    </div>
+
+    <div class="card auth-card">
+        <h2>Login</h2>
+        <p>Enter your account details to continue.</p>
+
+        <form method="POST" class="auth-form">
+            {% csrf_token %}
+
+            <div class="field">
+                <label for="username">Username</label>
+                <input type="text" id="username" name="username" placeholder="Enter username" required>
+            </div>
+
+            <div class="field">
+                <label for="password">Password</label>
+                <input type="password" id="password" name="password" placeholder="Enter password" required>
+            </div>
+
+            <button type="submit" class="btn">Login</button>
+        </form>
+
+        <div class="demo-logins" aria-label="Demo account credentials">
+            <div class="demo-login">
+                <strong>Patient Demo</strong>
+                <code>demo_patient</code>
+                <code>demo12345</code>
+            </div>
+            <div class="demo-login">
+                <strong>Doctor Demo</strong>
+                <code>demo_dr_neha</code>
+                <code>demo12345</code>
+            </div>
+        </div>
+
+        <p class="auth-foot">New here? <a href="/register/">Create an account</a></p>
+    </div>
+</section>
+{% endblock %}

@@ -1,0 +1,80 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<style>
+    .edit-shell {
+        max-width: 760px;
+        margin: 0 auto;
+    }
+
+    .edit-shell h2 {
+        margin: 0 0 8px;
+        color: var(--navy);
+        font-size: 34px;
+    }
+
+    .edit-shell p {
+        color: var(--muted);
+        margin: 0 0 18px;
+    }
+
+    .edit-form {
+        display: grid;
+        gap: 16px;
+    }
+
+    .edit-form label {
+        display: block;
+        margin-bottom: 8px;
+        color: var(--navy);
+        font-weight: 700;
+    }
+
+    .edit-form input {
+        width: 100%;
+        padding: 14px 16px;
+        border: 1px solid var(--line);
+        border-radius: 14px;
+        background: var(--surface-soft);
+        color: var(--text);
+        font: inherit;
+    }
+
+    .edit-actions {
+        display: flex;
+        gap: 12px;
+        flex-wrap: wrap;
+    }
+</style>
+
+<section class="edit-shell">
+    <h2>Edit Slot</h2>
+    <p>Update the selected availability for {{ doctor.name|default:doctor.user.username }}.</p>
+
+    <div class="card">
+        <form method="POST" class="edit-form">
+            {% csrf_token %}
+
+            <div>
+                <label for="available_date">Available Date</label>
+                <input type="date" id="available_date" name="available_date" value="{{ slot.available_date|date:'Y-m-d' }}" required>
+            </div>
+
+            <div>
+                <label for="start_time">Start Time</label>
+                <input type="time" id="start_time" name="start_time" value="{{ slot.start_time|time:'H:i' }}" required>
+            </div>
+
+            <div>
+                <label for="end_time">End Time</label>
+                <input type="time" id="end_time" name="end_time" value="{{ slot.end_time|time:'H:i' }}" required>
+            </div>
+
+            <div class="edit-actions">
+                <button type="submit" class="btn">Save Changes</button>
+                <a href="{% url 'manage_availability' %}" class="btn btn-secondary">Back</a>
+            </div>
+        </form>
+    </div>
+</section>
+{% endblock %}

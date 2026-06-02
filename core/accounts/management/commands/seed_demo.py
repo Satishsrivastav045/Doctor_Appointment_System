@@ -1,0 +1,164 @@
+from datetime import datetime, time, timedelta
+
+from django.core.management.base import BaseCommand
+from django.utils.timezone import localdate
+
+from accounts.models import Patient, Role, User
+from appointments.models import Appointment
+from doctors.models import Availability, Doctor
+
+
+DEMO_PASSWORD = "demo12345"
+
+
+class Command(BaseCommand):
+    help = "Create demo users, doctors, slots, and appointments for a full product walkthrough."
+
+    def handle(self, *args, **options):
+        doctor_role, _ = Role.objects.get_or_create(role_name="doctor")
+        patient_role, _ = Role.objects.get_or_create(role_name="patient")
+
+        patient_user = self._user(
+            username="demo_patient",
+            role=patient_role,
+            email="patient.demo@doctorsaheb.test",
+            first_name="Aarav Mehta",
+        )
+        patient, _ = Patient.objects.update_or_create(
+            user=patient_user,
+            defaults={"patient_name": "Aarav Mehta", "dob": "1998-08-14"},
+        )
+
+        doctor_specs = [
+            {
+                "username": "demo_dr_neha",
+                "name": "Dr. Neha Sharma",
+                "specialization": "General Physician",
+                "phone_no": "9876543210",
+                "email_id": "neha.sharma@doctorsaheb.test",
+                "photo_url": "https://images.unsplash.com/photo-1559839734-2b71ea197ec2?auto=format&fit=crop&w=500&q=80",
+                "whatsapp_number": "919876543210",
+                "consultation_fee": "500.00",
+                "rating": "4.8",
+                "review_count": 186,
+                "slots": [(1, time(9, 30), time(10, 0)), (1, time(10, 30), time(11, 0)), (2, time(17, 0), time(17, 30))],
+            },
+            {
+                "username": "demo_dr_rahul",
+                "name": "Dr. Rahul Verma",
+                "specialization": "Cardiologist",
+                "phone_no": "9876501234",
+                "email_id": "rahul.verma@doctorsaheb.test",
+                "photo_url": "https://images.unsplash.com/photo-1622253692010-333f2da6031d?auto=format&fit=crop&w=500&q=80",
+                "whatsapp_number": "919876501234",
+                "consultation_fee": "900.00",
+                "rating": "4.9",
+                "review_count": 241,
+                "slots": [(1, time(12, 0), time(12, 30)), (3, time(9, 0), time(9, 30)), (4, time(18, 0), time(18, 30))],
+            },
+            {
+                "username": "demo_dr_aisha",
+                "name": "Dr. Aisha Khan",
+                "specialization": "Dermatologist",
+                "phone_no": "9876512345",
+                "email_id": "aisha.khan@doctorsaheb.test",
+                "photo_url": "https://images.unsplash.com/photo-1594824476967-48c8b964273f?auto=format&fit=crop&w=500&q=80",
+                "whatsapp_number": "919876512345",
+                "consultation_fee": "700.00",
+                "rating": "4.7",
+                "review_count": 132,
+                "slots": [(2, time(11, 0), time(11, 30)), (2, time(16, 0), time(16, 30)), (5, time(10, 0), time(10, 30))],
+            },
+            {
+                "username": "demo_dr_kavya",
+                "name": "Dr. Kavya Iyer",
+                "specialization": "Gynecologist",
+                "phone_no": "9876523456",
+                "email_id": "kavya.iyer@doctorsaheb.test",
+                "photo_url": "https://images.unsplash.com/photo-1651008376811-b90baee60c1f?auto=format&fit=crop&w=500&q=80",
+                "whatsapp_number": "919876523456",
+                "consultation_fee": "800.00",
+                "rating": "4.8",
+                "review_count": 159,
+                "slots": [(1, time(15, 0), time(15, 30)), (3, time(11, 30), time(12, 0)), (6, time(9, 30), time(10, 0))],
+            },
+        ]
+
+        doctors = []
+        for spec in doctor_specs:
+            user = self._user(
+                username=spec["username"],
+                role=doctor_role,
+                email=spec["email_id"],
+                first_name=spec["name"],
+            )
+            doctor, _ = Doctor.objects.update_or_create(
+                user=user,
+                defaults={
+                    "name": spec["name"],
+                    "specialization": spec["specialization"],
+                    "phone_no": spec["phone_no"],
+                    "email_id": spec["email_id"],
+                    "photo_url": spec["photo_url"],
+                    "whatsapp_number": spec["whatsapp_number"],
+                    "consultation_fee": spec["consultation_fee"],
+                    "rating": spec["rating"],
+                    "review_count": spec["review_count"],
+                },
+            )
+            doctors.append(doctor)
+            self._slots(doctor, spec["slots"])
+
+        self._appointments(patient, doctors)
+
+        self.stdout.write(self.style.SUCCESS("Demo data ready."))
+        self.stdout.write("Patient login: demo_patient / demo12345")
+        self.stdout.write("Doctor login: demo_dr_neha / demo12345")
+
+    def _user(self, username, role, email, first_name):
+        user, created = User.objects.get_or_create(
+            username=username,
+            defaults={"email": email, "first_name": first_name, "role": role},
+        )
+        user.email = email
+        user.first_name = first_name
+        user.role = role
+        user.set_password(DEMO_PASSWORD)
+        user.save(update_fields=["email", "first_name", "role", "password"])
+        return user
+
+    def _slots(self, doctor, slot_specs):
+        today = localdate()
+        for day_offset, start_time, end_time in slot_specs:
+            Availability.objects.update_or_create(
+                doctor=doctor,
+                available_date=today + timedelta(days=day_offset),
+                start_time=start_time,
+                defaults={"end_time": end_time, "is_booked": False},
+            )
+
+    def _appointments(self, patient, doctors):
+        today = localdate()
+        appointment_specs = [
+            (doctors[0], today + timedelta(days=1), time(9, 30), "confirmed"),
+            (doctors[1], today + timedelta(days=1), time(12, 0), "pending"),
+            (doctors[2], today - timedelta(days=7), time(11, 0), "cancelled"),
+        ]
+
+        for doctor, appointment_date, start_time, status in appointment_specs:
+            end_time = (datetime.combine(appointment_date, start_time) + timedelta(minutes=30)).time()
+            slot, _ = Availability.objects.update_or_create(
+                doctor=doctor,
+                available_date=appointment_date,
+                start_time=start_time,
+                defaults={
+                    "end_time": end_time,
+                    "is_booked": status != "cancelled",
+                },
+            )
+            Appointment.objects.update_or_create(
+                patient=patient,
+                doctor=doctor,
+                availability=slot,
+                defaults={"appointment_date": appointment_date, "status": status},
+            )

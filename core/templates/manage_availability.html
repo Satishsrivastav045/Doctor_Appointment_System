@@ -1,0 +1,344 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<style>
+    .availability-layout {
+        display: grid;
+        grid-template-columns: 0.95fr 1.05fr;
+        gap: 22px;
+    }
+
+    .availability-head {
+        margin-bottom: 18px;
+    }
+
+    .availability-head h2 {
+        margin: 0 0 8px;
+        color: var(--navy);
+        font-size: 34px;
+    }
+
+    .availability-head p {
+        margin: 0;
+        color: var(--muted);
+    }
+
+    .slot-form {
+        display: grid;
+        gap: 14px;
+    }
+
+    .slot-form label {
+        display: block;
+        margin-bottom: 6px;
+        color: var(--navy);
+        font-weight: 700;
+    }
+
+    .slot-form input {
+        width: 100%;
+        padding: 14px 16px;
+        border: 1px solid var(--line);
+        border-radius: 14px;
+        background: var(--surface-soft);
+        color: var(--text);
+        font: inherit;
+    }
+
+    .slot-list {
+        display: grid;
+        gap: 14px;
+    }
+
+    .slot-item {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 14px;
+    }
+
+    .slot-item p {
+        margin: 6px 0;
+        color: var(--muted);
+    }
+
+    .slot-badge {
+        display: inline-flex;
+        padding: 8px 12px;
+        border-radius: 999px;
+        font-size: 13px;
+        font-weight: 800;
+    }
+
+    .profile-grid {
+        display: grid;
+        grid-template-columns: 120px 1fr;
+        gap: 18px;
+        align-items: start;
+        margin-bottom: 18px;
+    }
+
+    .profile-photo {
+        width: 120px;
+        height: 120px;
+        border-radius: 28px;
+        overflow: hidden;
+        background: linear-gradient(135deg, #dff5ff, #dbf4ea);
+        display: grid;
+        place-items: center;
+        color: var(--navy);
+        font-size: 40px;
+        font-weight: 800;
+    }
+
+    .profile-photo img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        display: block;
+    }
+
+    .profile-form {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 14px;
+    }
+
+    .profile-form .field-full {
+        grid-column: 1 / -1;
+    }
+
+    .slot-actions {
+        display: flex;
+        gap: 10px;
+        flex-wrap: wrap;
+        justify-content: flex-end;
+    }
+
+    .slot-open {
+        background: #e6faf5;
+        color: #0e7a64;
+    }
+
+    .slot-booked {
+        background: #fff4d9;
+        color: #9a6a00;
+    }
+
+    .slot-summary {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 14px;
+        margin-bottom: 18px;
+    }
+
+    .summary-box {
+        padding: 16px 18px;
+        border-radius: 18px;
+        background: linear-gradient(180deg, #ffffff, #f7fbfd);
+        border: 1px solid rgba(16, 50, 74, 0.08);
+    }
+
+    .summary-box strong {
+        display: block;
+        font-size: 24px;
+        color: var(--navy);
+        margin-bottom: 6px;
+    }
+
+    .helper-card {
+        margin-bottom: 18px;
+    }
+
+    .helper-card h3 {
+        margin: 0 0 10px;
+        color: var(--text);
+        font-size: 22px;
+    }
+
+    .helper-steps {
+        display: grid;
+        gap: 12px;
+    }
+
+    .helper-step {
+        padding: 12px 0;
+        border-top: 1px solid rgba(160, 194, 220, 0.1);
+        color: var(--muted);
+        line-height: 1.6;
+    }
+
+    .helper-step:first-child {
+        border-top: 0;
+        padding-top: 0;
+    }
+
+    @media (max-width: 900px) {
+        .availability-layout {
+            grid-template-columns: 1fr;
+        }
+
+        .slot-item {
+            flex-direction: column;
+            align-items: flex-start;
+        }
+
+        .slot-summary {
+            grid-template-columns: 1fr;
+        }
+
+        .profile-grid,
+        .profile-form {
+            grid-template-columns: 1fr;
+        }
+    }
+</style>
+
+<div class="availability-head">
+    <h2>Manage Availability</h2>
+    <p>Add new appointment slots for {{ doctor.name|default:doctor.user.username }} and track what is still open.</p>
+</div>
+
+<div class="card helper-card">
+    <h3>Start Yahan Se</h3>
+    <div class="helper-steps">
+        <div class="helper-step"><strong>1.</strong> Pehle doctor profile complete karo, taki patient ko aapki details clearly dikh sake.</div>
+        <div class="helper-step"><strong>2.</strong> Phir date aur time dekar slot add karo.</div>
+        <div class="helper-step"><strong>3.</strong> Open slot ko edit/delete kar sakte ho, booked slot sirf track hoga.</div>
+    </div>
+</div>
+
+<div class="availability-layout">
+    <section class="card">
+        <h3 style="margin-top: 0; color: var(--navy);">Doctor Profile</h3>
+        <div class="profile-grid">
+            <div class="profile-photo">
+                {% if doctor.photo_url %}
+                    <img src="{{ doctor.photo_url }}" alt="{{ doctor.name|default:doctor.user.username }}">
+                {% else %}
+                    {{ doctor.name|default:doctor.user.username|slice:":1"|upper }}
+                {% endif %}
+            </div>
+
+            <form method="POST" class="profile-form">
+                {% csrf_token %}
+                <input type="hidden" name="form_type" value="profile">
+
+                <div>
+                    <label for="name">Doctor Name</label>
+                    <input type="text" id="name" name="name" value="{{ doctor.name }}">
+                </div>
+
+                <div>
+                    <label for="specialization">Specialization</label>
+                    <input type="text" id="specialization" name="specialization" value="{{ doctor.specialization }}">
+                </div>
+
+                <div>
+                    <label for="email_id">Email</label>
+                    <input type="email" id="email_id" name="email_id" value="{{ doctor.email_id }}">
+                </div>
+
+                <div>
+                    <label for="phone_no">Phone</label>
+                    <input type="text" id="phone_no" name="phone_no" value="{{ doctor.phone_no }}">
+                </div>
+
+                <div>
+                    <label for="whatsapp_number">WhatsApp Number</label>
+                    <input type="text" id="whatsapp_number" name="whatsapp_number" value="{{ doctor.whatsapp_number }}">
+                </div>
+
+                <div>
+                    <label for="consultation_fee">Consultation Fee</label>
+                    <input type="number" step="0.01" id="consultation_fee" name="consultation_fee" value="{{ doctor.consultation_fee }}">
+                </div>
+
+                <div>
+                    <label for="rating">Rating</label>
+                    <input type="number" step="0.1" min="0" max="5" id="rating" name="rating" value="{{ doctor.rating }}">
+                </div>
+
+                <div>
+                    <label for="review_count">Review Count</label>
+                    <input type="number" min="0" id="review_count" name="review_count" value="{{ doctor.review_count }}">
+                </div>
+
+                <div class="field-full">
+                    <label for="photo_url">Photo URL</label>
+                    <input type="url" id="photo_url" name="photo_url" value="{{ doctor.photo_url }}" placeholder="Paste doctor profile image URL">
+                </div>
+
+                <div class="field-full">
+                    <button type="submit" class="btn">Update Profile</button>
+                </div>
+            </form>
+        </div>
+
+        <h3 style="color: var(--navy); margin-bottom: 12px;">Add New Slot</h3>
+        <form method="POST" class="slot-form">
+            {% csrf_token %}
+            <input type="hidden" name="form_type" value="slot">
+
+            <div>
+                <label for="available_date">Available Date</label>
+                <input type="date" id="available_date" name="available_date" required>
+            </div>
+
+            <div>
+                <label for="start_time">Start Time</label>
+                <input type="time" id="start_time" name="start_time" required>
+            </div>
+
+            <div>
+                <label for="end_time">End Time</label>
+                <input type="time" id="end_time" name="end_time" required>
+            </div>
+
+            <button type="submit" class="btn">Add Slot</button>
+        </form>
+    </section>
+
+    <section class="card">
+        <h3 style="margin-top: 0; color: var(--navy);">Existing Slots</h3>
+
+        <div class="slot-summary">
+            <div class="summary-box">
+                <strong>{{ slot_count }}</strong>
+                <span>Total slots</span>
+            </div>
+            <div class="summary-box">
+                <strong>{{ open_count }}</strong>
+                <span>Open slots</span>
+            </div>
+            <div class="summary-box">
+                <strong>{{ booked_count }}</strong>
+                <span>Booked slots</span>
+            </div>
+        </div>
+
+        <div class="slot-list">
+            {% for slot in slots %}
+                <div class="slot-item">
+                    <div>
+                        <p><strong>Date:</strong> {{ slot.available_date }}</p>
+                        <p><strong>Time:</strong> {{ slot.start_time }} - {{ slot.end_time }}</p>
+                    </div>
+
+                    <div class="slot-actions">
+                        {% if slot.is_booked %}
+                            <span class="slot-badge slot-booked">Booked</span>
+                        {% else %}
+                            <span class="slot-badge slot-open">Open</span>
+                            <a href="{% url 'edit_availability' slot.id %}" class="btn btn-secondary">Edit</a>
+                            <a href="{% url 'delete_availability' slot.id %}" class="btn btn-secondary">Delete</a>
+                        {% endif %}
+                    </div>
+                </div>
+            {% empty %}
+                <p style="margin: 0; color: var(--muted);">No slots added yet.</p>
+            {% endfor %}
+        </div>
+    </section>
+</div>
+{% endblock %}

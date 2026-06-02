@@ -1,0 +1,123 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<style>
+    .booking-layout {
+        display: grid;
+        grid-template-columns: 0.85fr 1.15fr;
+        gap: 22px;
+    }
+
+    .doctor-panel {
+        background:
+            radial-gradient(circle at top right, rgba(255, 255, 255, 0.22), transparent 28%),
+            linear-gradient(145deg, var(--navy) 0%, #174a67 62%, #227792 100%);
+        color: white;
+        border-radius: var(--radius-xl);
+        padding: 30px;
+        box-shadow: var(--shadow);
+    }
+
+    .doctor-avatar {
+        width: 78px;
+        height: 78px;
+        border-radius: 22px;
+        display: grid;
+        place-items: center;
+        background: rgba(255, 255, 255, 0.15);
+        font-size: 28px;
+        font-weight: 800;
+        margin-bottom: 18px;
+    }
+
+    .doctor-panel h2 {
+        margin: 0 0 10px;
+        font-size: 34px;
+    }
+
+    .doctor-panel p {
+        margin: 8px 0;
+        color: rgba(255, 255, 255, 0.82);
+        line-height: 1.7;
+    }
+
+    .booking-card h3 {
+        margin-top: 0;
+        color: var(--navy);
+        font-size: 28px;
+    }
+
+    .slot-choice {
+        display: block;
+        padding: 16px 18px;
+        border-radius: 18px;
+        border: 1px solid var(--line);
+        background: var(--surface-soft);
+        margin-bottom: 14px;
+        cursor: pointer;
+        transition: transform 0.15s ease, border-color 0.15s ease;
+    }
+
+    .slot-choice:hover {
+        transform: translateY(-2px);
+        border-color: rgba(26, 166, 160, 0.45);
+    }
+
+    .slot-choice input {
+        margin-right: 10px;
+    }
+
+    .slot-date {
+        display: block;
+        color: var(--navy);
+        font-weight: 800;
+        margin-bottom: 6px;
+    }
+
+    .slot-time {
+        color: var(--muted);
+        font-weight: 600;
+    }
+
+    @media (max-width: 900px) {
+        .booking-layout {
+            grid-template-columns: 1fr;
+        }
+    }
+</style>
+
+<section class="booking-layout">
+    <div class="doctor-panel">
+        <div class="doctor-avatar">
+            {{ doctor.name|default:doctor.user.username|slice:":1"|upper }}
+        </div>
+        <h2>{{ doctor.name|default:doctor.user.username }}</h2>
+        <p><strong>Specialization:</strong> {{ doctor.specialization|default:"Not added yet" }}</p>
+        <p><strong>Email:</strong> {{ doctor.email_id|default:doctor.user.email|default:"Not added yet" }}</p>
+        <p><strong>Phone:</strong> {{ doctor.phone_no|default:"Not added yet" }}</p>
+        <p>Choose your preferred slot and confirm the booking in one step.</p>
+    </div>
+
+    <div class="card booking-card">
+        <h3>Select Appointment Slot</h3>
+
+        <form method="POST">
+            {% csrf_token %}
+
+            {% for slot in slots %}
+                <label class="slot-choice">
+                    <input type="radio" name="slot_id" value="{{ slot.id }}" required>
+                    <span class="slot-date">{{ slot.available_date }}</span>
+                    <span class="slot-time">{{ slot.start_time }} - {{ slot.end_time }}</span>
+                </label>
+            {% empty %}
+                <p style="color: var(--muted);">No available slots for this doctor right now.</p>
+            {% endfor %}
+
+            {% if slots %}
+                <button type="submit" class="btn">Confirm Booking</button>
+            {% endif %}
+        </form>
+    </div>
+</section>
+{% endblock %}

@@ -1,0 +1,319 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<style>
+    .dashboard-shell {
+        display: grid;
+        gap: 18px;
+    }
+
+    .hero-card {
+        background:
+            radial-gradient(circle at top right, rgba(34, 199, 185, 0.18), transparent 26%),
+            linear-gradient(145deg, #091522 0%, #10263a 54%, #14334a 100%);
+        border-radius: var(--radius-xl);
+        padding: 28px;
+        border: 1px solid rgba(160, 194, 220, 0.12);
+        box-shadow: var(--shadow);
+    }
+
+    .dashboard-head {
+        display: flex;
+        justify-content: space-between;
+        align-items: end;
+        gap: 16px;
+    }
+
+    .dashboard-head h2 {
+        margin: 0 0 8px;
+        color: #ffffff;
+        font-size: 34px;
+    }
+
+    .dashboard-head p {
+        margin: 0;
+        color: rgba(255, 255, 255, 0.78);
+    }
+
+    .appointment-grid {
+        display: grid;
+        gap: 18px;
+    }
+
+    .helper-grid {
+        display: grid;
+        grid-template-columns: 1.1fr 0.9fr;
+        gap: 18px;
+    }
+
+    .helper-card h3,
+    .quick-card h3 {
+        margin: 0 0 10px;
+        color: var(--text);
+        font-size: 22px;
+    }
+
+    .steps {
+        display: grid;
+        gap: 12px;
+    }
+
+    .step-item {
+        display: grid;
+        grid-template-columns: 36px 1fr;
+        gap: 12px;
+        align-items: start;
+        padding: 12px 0;
+        border-top: 1px solid rgba(160, 194, 220, 0.1);
+    }
+
+    .step-item:first-child {
+        border-top: 0;
+        padding-top: 0;
+    }
+
+    .step-badge {
+        width: 36px;
+        height: 36px;
+        border-radius: 50%;
+        display: grid;
+        place-items: center;
+        background: rgba(34, 199, 185, 0.16);
+        color: var(--text);
+        font-weight: 800;
+    }
+
+    .step-item p,
+    .quick-card p {
+        margin: 4px 0 0;
+        color: var(--muted);
+        line-height: 1.6;
+    }
+
+    .quick-actions {
+        display: grid;
+        gap: 12px;
+        margin-top: 14px;
+    }
+
+    .stats-grid {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 14px;
+        margin-top: 18px;
+    }
+
+    .stat-card-dark {
+        padding: 18px;
+        border-radius: 18px;
+        background: rgba(255, 255, 255, 0.05);
+        border: 1px solid rgba(160, 194, 220, 0.12);
+    }
+
+    .stat-card-dark strong {
+        display: block;
+        font-size: 28px;
+        color: var(--text);
+        margin-bottom: 6px;
+    }
+
+    .appointment-card {
+        display: grid;
+        grid-template-columns: 1fr auto;
+        gap: 18px;
+        align-items: start;
+        background: linear-gradient(180deg, rgba(17, 36, 54, 0.92), rgba(9, 22, 35, 0.92));
+    }
+
+    .appointment-card h3 {
+        margin: 0 0 10px;
+        color: #ffffff;
+    }
+
+    .appointment-card p {
+        margin: 6px 0;
+        color: var(--muted);
+    }
+
+    .status-pill {
+        display: inline-flex;
+        padding: 8px 12px;
+        border-radius: 999px;
+        font-size: 13px;
+        font-weight: 800;
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+    }
+
+    .status-pending {
+        background: #fff4d9;
+        color: #9a6a00;
+    }
+
+    .status-confirmed {
+        background: #e6faf5;
+        color: #0e7a64;
+    }
+
+    .status-cancelled {
+        background: #ffe7e7;
+        color: #b43b3b;
+    }
+
+    .action-stack {
+        min-width: 190px;
+    }
+
+    .action-stack .btn,
+    .action-stack .btn-secondary {
+        width: 100%;
+        margin-top: 10px;
+    }
+
+    .section-title {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 14px;
+    }
+
+    .section-title h3 {
+        margin: 0;
+        color: var(--text);
+        font-size: 22px;
+    }
+
+    .status-chip {
+        display: inline-flex;
+        padding: 7px 12px;
+        border-radius: 999px;
+        font-size: 13px;
+        font-weight: 800;
+        background: rgba(255, 255, 255, 0.06);
+        border: 1px solid rgba(160, 194, 220, 0.14);
+    }
+
+    @media (max-width: 820px) {
+        .dashboard-head,
+        .appointment-card {
+            grid-template-columns: 1fr;
+        }
+
+        .action-stack {
+            min-width: 0;
+        }
+
+        .stats-grid {
+            grid-template-columns: 1fr;
+        }
+
+        .helper-grid {
+            grid-template-columns: 1fr;
+        }
+    }
+</style>
+
+<div class="dashboard-shell">
+<div class="hero-card">
+    <div class="dashboard-head">
+        <div>
+            <h2>Doctor Dashboard</h2>
+            <p>Pending requests ko jaldi review karo, slots manage karo, aur patient actions ko ek screen se handle karo.</p>
+        </div>
+        <a href="{% url 'manage_availability' %}" class="btn">Manage Slots</a>
+    </div>
+
+    <div class="stats-grid">
+        <div class="stat-card-dark">
+            <strong>{{ doctor_stats.total }}</strong>
+            <span>Total requests</span>
+        </div>
+        <div class="stat-card-dark">
+            <strong>{{ doctor_stats.pending }}</strong>
+            <span>Pending review</span>
+        </div>
+        <div class="stat-card-dark">
+            <strong>{{ doctor_stats.confirmed }}</strong>
+            <span>Confirmed</span>
+        </div>
+        <div class="stat-card-dark">
+            <strong>{{ doctor_stats.cancelled }}</strong>
+            <span>Cancelled</span>
+        </div>
+    </div>
+</div>
+
+<div class="helper-grid">
+    <div class="card helper-card">
+        <h3>First Time? Doctor Workflow</h3>
+        <div class="steps">
+            <div class="step-item">
+                <div class="step-badge">1</div>
+                <div>
+                    <strong>Manage Slots Pe Jao</strong>
+                    <p>Sabse pehle apni availability add karo, taki patient aapko book kar sake.</p>
+                </div>
+            </div>
+            <div class="step-item">
+                <div class="step-badge">2</div>
+                <div>
+                    <strong>Pending Requests Check Karo</strong>
+                    <p>Nayi booking aane par ye niche request list me dikh jayegi.</p>
+                </div>
+            </div>
+            <div class="step-item">
+                <div class="step-badge">3</div>
+                <div>
+                    <strong>Approve Ya Reject</strong>
+                    <p>Har card me direct buttons hain, isliye ek tap me decision le sakte ho.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="card quick-card">
+        <h3>Quick Actions</h3>
+        <p>Roz ka kaam yahin se fast karo.</p>
+        <div class="quick-actions">
+            <a href="{% url 'manage_availability' %}" class="btn">Manage Slots</a>
+            <a href="#requests" class="btn btn-secondary">Jump to Requests</a>
+        </div>
+    </div>
+</div>
+
+<div class="section-title">
+    <div id="requests"></div>
+    <h3>Appointment Requests</h3>
+    <span class="status-chip">Approve or reject in one tap</span>
+</div>
+
+<div class="appointment-grid">
+    {% for app in appointments %}
+        <div class="card appointment-card">
+            <div>
+                <span class="status-pill status-{{ app.status }}">{{ app.get_status_display }}</span>
+                <h3>{{ app.patient.patient_name }}</h3>
+                <p><strong>Date:</strong> {{ app.appointment_date }}</p>
+                <p><strong>Time:</strong> {{ app.availability.start_time }} - {{ app.availability.end_time }}</p>
+                <p><strong>Contact:</strong> {{ app.patient.user.username }}</p>
+            </div>
+
+            <div class="action-stack">
+                {% if app.status == 'pending' %}
+                    <a href="{% url 'update_status' app.id 'approved' %}" class="btn">Approve</a>
+                    <a href="{% url 'update_status' app.id 'rejected' %}" class="btn btn-secondary">Reject</a>
+                {% elif app.status == 'confirmed' %}
+                    <a href="{% url 'update_status' app.id 'rejected' %}" class="btn btn-secondary">Reject Instead</a>
+                {% else %}
+                    <a href="{% url 'update_status' app.id 'approved' %}" class="btn">Approve Instead</a>
+                {% endif %}
+            </div>
+        </div>
+    {% empty %}
+        <div class="card">
+            <p>No bookings yet. Pehle Manage Slots me jaake slots add karo, fir patient requests yahan aayengi.</p>
+        </div>
+    {% endfor %}
+</div>
+</div>
+{% endblock %}
