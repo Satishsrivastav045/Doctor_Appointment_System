@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import imghdr
 from dataclasses import dataclass
 from typing import Iterable
 
@@ -99,6 +98,18 @@ class ImageDiagnosisResult:
     confidence: int
     recommendation: str
     image_type: str
+
+
+def detect_image_type(raw: bytes) -> str:
+    if raw.startswith(b"\xff\xd8\xff"):
+        return "jpeg"
+    if raw.startswith(b"\x89PNG\r\n\x1a\n"):
+        return "png"
+    if raw.startswith(b"GIF87a") or raw.startswith(b"GIF89a"):
+        return "gif"
+    if raw.startswith(b"RIFF") and raw[8:12] == b"WEBP":
+        return "webp"
+    return "unknown"
 
 
 def extract_symptoms(text: str) -> list[str]:
@@ -354,7 +365,7 @@ def optimize_appointment_slots(doctors: Iterable, condition: str, today, urgency
 def diagnose_image_upload(uploaded_file) -> ImageDiagnosisResult:
     raw = uploaded_file.read()
     uploaded_file.seek(0)
-    image_type = imghdr.what(None, raw) or "unknown"
+    image_type = detect_image_type(raw)
     filename = (uploaded_file.name or "").lower()
     size_kb = max(len(raw) // 1024, 1)
 
