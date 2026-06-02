@@ -26,6 +26,7 @@ Best resume line:
 - Patient dashboard with upcoming/history appointments
 - Doctor dashboard with appointment request counts
 - Appointment approve/reject/cancel status flow
+- Email notifications for booking, status updates, and cancellations
 - Django admin panel for managing users, doctors, slots, and appointments
 - Demo data seeding command for recruiter walkthroughs
 - AI feature page for symptom prediction, risk scoring, doctor recommendation, appointment optimization, and image diagnosis demo flows
@@ -38,6 +39,7 @@ Best resume line:
 - PostgreSQL-ready deployment through `DATABASE_URL`
 - HTML, CSS, Django templates
 - Gunicorn for production serving
+- SMTP-ready email notifications
 
 ## Database
 
@@ -128,8 +130,21 @@ gunicorn core.wsgi:application --chdir core
 5. Open the admin panel to show database-backed management.
 6. Visit the AI features page to explain future-facing healthcare enhancements.
 
+## Email Notifications
+
+Local development uses Django's console email backend, so emails print in the terminal. For real emails, set SMTP values in `.env`:
+
+```text
+EMAIL_BACKEND=django.core.mail.backends.smtp.EmailBackend
+EMAIL_HOST=smtp.example.com
+EMAIL_PORT=587
+EMAIL_HOST_USER=your-email@example.com
+EMAIL_HOST_PASSWORD=your-app-password
+EMAIL_USE_TLS=True
+DEFAULT_FROM_EMAIL=Doctor Appointment System <your-email@example.com>
+```
+
 ## Current Limitations
 
-- Email notification is not implemented yet.
 - Payment integration is not implemented.
 - The AI modules are demo-oriented and should be expanded with production-grade models before real medical use.

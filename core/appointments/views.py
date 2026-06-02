@@ -1,6 +1,8 @@
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
+from django.core.mail import send_mail
+from django.conf import settings
 from django.utils.timezone import localdate
 from accounts.models import Patient
 from doctors.models import Doctor, Availability
@@ -13,6 +15,20 @@ from .ai_engine import (
     predict_from_text,
     recommend_doctors_for_condition,
 )
+
+
+def _send_notification(subject, message, recipients):
+    clean_recipients = [email for email in recipients if email]
+    if not clean_recipients:
+        return
+
+    send_mail(
+        subject,
+        message,
+        settings.DEFAULT_FROM_EMAIL,
+        clean_recipients,
+        fail_silently=True,
+    )
 
 
 def ai_features(request):
@@ -220,7 +236,7 @@ def book_appointment(request, doctor_id):
 
         slot = get_object_or_404(Availability, id=slot_id, doctor=doctor, is_booked=False)
 
-        Appointment.objects.create(
+        appointment = Appointment.objects.create(
             patient=patient,
             doctor=doctor,
             availability=slot,
@@ -230,6 +246,22 @@ def book_appointment(request, doctor_id):
         slot.save(update_fields=["is_booked"])
 
         messages.success(request, "Appointment booked successfully.")
+        _send_notification(
+            "Appointment booking received",
+            (
+                f"Your appointment request with {doctor.name or doctor.user.username} "
+                f"for {appointment.appointment_date} at {slot.start_time} is pending confirmation."
+            ),
+            [patient.user.email],
+        )
+        _send_notification(
+            "New appointment request",
+            (
+                f"{patient.patient_name} booked an appointment for {appointment.appointment_date} "
+                f"at {slot.start_time}. Please approve or reject it from your dashboard."
+            ),
+            [doctor.email_id, doctor.user.email],
+        )
 
         return redirect('patient_dashboard')
 
@@ -269,6 +301,14 @@ def update_status(request, id, status):
         request,
         f"Appointment for {appointment.patient.patient_name} marked as {appointment.get_status_display()}.",
     )
+    _send_notification(
+        f"Appointment {appointment.get_status_display()}",
+        (
+            f"Your appointment with {appointment.doctor.name or appointment.doctor.user.username} "
+            f"on {appointment.appointment_date} has been marked as {appointment.get_status_display()}."
+        ),
+        [appointment.patient.user.email],
+    )
     return redirect("doctor_dashboard")
 
 
@@ -287,4 +327,12 @@ def cancel_appointment(request, id):
     appointment.availability.save(update_fields=["is_booked"])
 
     messages.success(request, "Appointment cancelled successfully.")
+    _send_notification(
+        "Appointment cancelled",
+        (
+            f"{patient.patient_name} cancelled the appointment scheduled on "
+            f"{appointment.appointment_date}."
+        ),
+        [appointment.doctor.email_id, appointment.doctor.user.email],
+    )
     return redirect("patient_dashboard")

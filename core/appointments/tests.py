@@ -1,5 +1,7 @@
 from datetime import date, time, timedelta
 
+from django.core import mail
+from django.test import override_settings
 from django.urls import reverse
 from django.test import TestCase
 
@@ -8,6 +10,7 @@ from doctors.models import Availability, Doctor
 from .models import Appointment
 
 
+@override_settings(EMAIL_BACKEND="django.core.mail.backends.locmem.EmailBackend")
 class AppointmentFlowTests(TestCase):
     def setUp(self):
         self.patient_role = Role.objects.create(role_name="patient")
@@ -17,6 +20,7 @@ class AppointmentFlowTests(TestCase):
             username="patient_user",
             password="testpass123",
             role=self.patient_role,
+            email="patient@example.com",
         )
         self.patient = Patient.objects.create(
             user=self.patient_user,
@@ -27,11 +31,13 @@ class AppointmentFlowTests(TestCase):
             username="doctor_user",
             password="testpass123",
             role=self.doctor_role,
+            email="doctor@example.com",
         )
         self.doctor = Doctor.objects.create(
             user=self.doctor_user,
             name="Dr Test",
             specialization="General Physician",
+            email_id="clinic@example.com",
         )
         self.slot = Availability.objects.create(
             doctor=self.doctor,
@@ -53,6 +59,9 @@ class AppointmentFlowTests(TestCase):
         self.assertEqual(appointment.status, "pending")
         self.slot.refresh_from_db()
         self.assertTrue(self.slot.is_booked)
+        self.assertEqual(len(mail.outbox), 2)
+        self.assertIn("Appointment booking received", mail.outbox[0].subject)
+        self.assertIn("New appointment request", mail.outbox[1].subject)
 
     def test_doctor_can_update_own_appointment_status(self):
         appointment = Appointment.objects.create(
@@ -68,6 +77,8 @@ class AppointmentFlowTests(TestCase):
         self.assertRedirects(response, reverse("doctor_dashboard"))
         appointment.refresh_from_db()
         self.assertEqual(appointment.status, "confirmed")
+        self.assertEqual(len(mail.outbox), 1)
+        self.assertIn("Appointment Confirmed", mail.outbox[0].subject)
 
     def test_doctor_user_cannot_book_patient_appointment(self):
         self.client.login(username="doctor_user", password="testpass123")
