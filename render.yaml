@@ -2,7 +2,7 @@ services:
   - type: web
     name: doctor-appointment-system
     env: python
-    buildCommand: pip install -r requirements.txt && python core/manage.py collectstatic --noinput && python core/manage.py migrate && python core/manage.py seed_demo
+    buildCommand: pip install -r requirements.txt && python core/manage.py collectstatic --noinput && python core/manage.py migrate && python core/manage.py seed_demo && python core/manage.py ensure_superuser
     startCommand: gunicorn core.wsgi:application --chdir core
     envVars:
       - key: SECRET_KEY
