@@ -1,5 +1,6 @@
 from datetime import datetime, time, timedelta
 
+from django.core.management import call_command
 from django.core.management.base import BaseCommand
 from django.utils.timezone import localdate
 
@@ -160,6 +161,7 @@ class Command(BaseCommand):
         self.stdout.write(self.style.SUCCESS("Demo data ready."))
         self.stdout.write("Patient login: demo_patient / demo12345")
         self.stdout.write("Doctor login: demo_dr_neha / demo12345")
+        call_command("ensure_superuser")
 
     def _user(self, username, role, email, first_name):
         user, created = User.objects.get_or_create(
