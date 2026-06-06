@@ -9,17 +9,9 @@ class Command(BaseCommand):
     help = "Create or update an admin superuser from ADMIN_* environment variables."
 
     def handle(self, *args, **options):
-        username = os.environ.get("ADMIN_USERNAME", "").strip()
-        email = os.environ.get("ADMIN_EMAIL", "").strip()
-        password = os.environ.get("ADMIN_PASSWORD", "")
-
-        if not username or not email or not password:
-            self.stdout.write(
-                self.style.WARNING(
-                    "Skipping admin setup. Set ADMIN_USERNAME, ADMIN_EMAIL, and ADMIN_PASSWORD."
-                )
-            )
-            return
+        username = os.environ.get("ADMIN_USERNAME", "admin").strip()
+        email = os.environ.get("ADMIN_EMAIL", "admin@doctorsaheb.test").strip()
+        password = os.environ.get("ADMIN_PASSWORD", "admin12345")
 
         user, created = User.objects.get_or_create(
             username=username,
