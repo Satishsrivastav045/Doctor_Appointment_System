@@ -6,6 +6,7 @@ from django.utils.timezone import localdate
 from .models import User, Role, Patient
 from appointments.models import Appointment
 from doctors.models import Doctor
+from pharmacies.models import Pharmacy
 
 
 def register(request):
@@ -57,6 +58,23 @@ def register(request):
                     'is_emergency_available': request.POST.get('is_emergency_available') == 'on',
                 }
             )
+        elif role.role_name == 'pharmacy':
+            Pharmacy.objects.get_or_create(
+                user=user,
+                defaults={
+                    'shop_name': request.POST.get('shop_name', '').strip() or full_name or username,
+                    'owner_name': full_name or username,
+                    'phone_no': request.POST.get('pharmacy_phone_no', '').strip(),
+                    'whatsapp_number': request.POST.get('pharmacy_whatsapp_number', '').strip(),
+                    'license_number': request.POST.get('license_number', '').strip(),
+                    'district': request.POST.get('pharmacy_district', '').strip(),
+                    'city_or_block': request.POST.get('pharmacy_city_or_block', '').strip(),
+                    'village_or_area': request.POST.get('pharmacy_village_or_area', '').strip(),
+                    'full_address': request.POST.get('pharmacy_full_address', '').strip(),
+                    'opening_time': request.POST.get('opening_time') or None,
+                    'closing_time': request.POST.get('closing_time') or None,
+                }
+            )
         else:
             Patient.objects.get_or_create(
                 user=user,
@@ -71,6 +89,8 @@ def register(request):
         # Role-based redirect
         if role.role_name == 'doctor':
             return redirect('/doctor-dashboard/')
+        elif role.role_name == 'pharmacy':
+            return redirect('/pharmacy-dashboard/')
         else:
             return redirect('/patient-dashboard/')
 
@@ -91,6 +111,8 @@ def user_login(request):
             # Role-based redirect
             if user.role and user.role.role_name == 'doctor':
                 return redirect('/doctor-dashboard/')
+            elif user.role and user.role.role_name == 'pharmacy':
+                return redirect('/pharmacy-dashboard/')
             else:
                 return redirect('/patient-dashboard/')
         else:

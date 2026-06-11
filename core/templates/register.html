@@ -94,7 +94,7 @@
         font: inherit;
     }
 
-    .doctor-extra {
+    .role-extra {
         grid-column: 1 / -1;
         display: none;
         grid-template-columns: 1fr 1fr;
@@ -105,7 +105,7 @@
         background: var(--surface-soft);
     }
 
-    .doctor-extra.is-visible {
+    .role-extra.is-visible {
         display: grid;
     }
 
@@ -140,7 +140,7 @@
             grid-template-columns: 1fr;
         }
 
-        .doctor-extra {
+        .role-extra {
             grid-template-columns: 1fr;
         }
     }
@@ -150,7 +150,7 @@
     <div class="register-side">
         <h1>Create your clinic-ready account</h1>
         <p>
-            Join as a patient or doctor and start managing bookings, appointments, and availability
+                Join as a patient, doctor, or pharmacy and start managing care, medicines, and availability
             in one streamlined healthcare workspace.
         </p>
 
@@ -162,6 +162,10 @@
             <div class="register-metric">
                 <strong>Doctors</strong>
                 Manage slots, review requests, and control appointment status.
+            </div>
+            <div class="register-metric">
+                <strong>Pharmacies</strong>
+                List medicines so local patients can find nearby stock faster.
             </div>
             <div class="register-metric">
                 <strong>Product Ready</strong>
@@ -206,7 +210,7 @@
                 </select>
             </div>
 
-            <div class="doctor-extra" id="doctor-extra">
+            <div class="role-extra" id="doctor-extra">
                 <div class="field-full">
                     <label for="hospital_name">Hospital / Clinic Name</label>
                     <input type="text" id="hospital_name" name="hospital_name" placeholder="Clinic, hospital, or practice name">
@@ -278,6 +282,58 @@
                 </div>
             </div>
 
+            <div class="role-extra" id="pharmacy-extra">
+                <div class="field-full">
+                    <label for="shop_name">Pharmacy / Medical Store Name</label>
+                    <input type="text" id="shop_name" name="shop_name" placeholder="Shop name">
+                </div>
+
+                <div>
+                    <label for="pharmacy_phone_no">Phone</label>
+                    <input type="text" id="pharmacy_phone_no" name="pharmacy_phone_no" placeholder="Customer contact number">
+                </div>
+
+                <div>
+                    <label for="pharmacy_whatsapp_number">WhatsApp Number</label>
+                    <input type="text" id="pharmacy_whatsapp_number" name="pharmacy_whatsapp_number" placeholder="919876543210">
+                </div>
+
+                <div>
+                    <label for="license_number">Drug License Number</label>
+                    <input type="text" id="license_number" name="license_number" placeholder="License number">
+                </div>
+
+                <div>
+                    <label for="pharmacy_district">District</label>
+                    <input type="text" id="pharmacy_district" name="pharmacy_district" placeholder="District">
+                </div>
+
+                <div>
+                    <label for="pharmacy_city_or_block">City / Block</label>
+                    <input type="text" id="pharmacy_city_or_block" name="pharmacy_city_or_block" placeholder="City or block">
+                </div>
+
+                <div>
+                    <label for="pharmacy_village_or_area">Village / Area</label>
+                    <input type="text" id="pharmacy_village_or_area" name="pharmacy_village_or_area" placeholder="Village, ward, or area">
+                </div>
+
+                <div>
+                    <label for="opening_time">Opening Time</label>
+                    <input type="time" id="opening_time" name="opening_time">
+                </div>
+
+                <div>
+                    <label for="closing_time">Closing Time</label>
+                    <input type="time" id="closing_time" name="closing_time">
+                </div>
+
+                <div class="field-full">
+                    <label for="pharmacy_full_address">Full Address</label>
+                    <input type="text" id="pharmacy_full_address" name="pharmacy_full_address" placeholder="Complete shop address">
+                </div>
+            </div>
+
             <div class="field-full">
                 <label for="password">Password</label>
                 <input type="password" id="password" name="password" placeholder="Create password" required>
@@ -294,11 +350,13 @@
 <script>
     const roleSelect = document.getElementById("role");
     const doctorExtra = document.getElementById("doctor-extra");
+    const pharmacyExtra = document.getElementById("pharmacy-extra");
     const locationButton = document.getElementById("fill-location");
 
     function toggleDoctorFields() {
         const selectedText = roleSelect.options[roleSelect.selectedIndex]?.text.toLowerCase() || "";
         doctorExtra.classList.toggle("is-visible", selectedText.includes("doctor"));
+        pharmacyExtra.classList.toggle("is-visible", selectedText.includes("pharmacy"));
     }
 
     roleSelect.addEventListener("change", toggleDoctorFields);

@@ -301,11 +301,14 @@
 
             <nav class="nav-links" aria-label="Primary navigation">
                 <a href="/doctors/">Doctors</a>
+                <a href="/pharmacies/">Pharmacies</a>
                 <a href="/ai-features/">AI Tools</a>
                 {% if user.is_authenticated %}
                     {% if user.role and user.role.role_name == 'doctor' %}
                         <a href="/doctor-dashboard/">Dashboard</a>
                         <a href="{% url 'manage_availability' %}">Slots</a>
+                    {% elif user.role and user.role.role_name == 'pharmacy' %}
+                        <a href="/pharmacy-dashboard/">Dashboard</a>
                     {% else %}
                         <a href="/patient-dashboard/">Dashboard</a>
                     {% endif %}

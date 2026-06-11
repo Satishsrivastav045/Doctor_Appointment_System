@@ -7,6 +7,7 @@ from django.utils.timezone import localdate
 from accounts.models import Patient, Role, User
 from appointments.models import Appointment
 from doctors.models import Availability, Doctor
+from pharmacies.models import MedicineStock, Pharmacy
 
 
 DEMO_PASSWORD = "demo12345"
@@ -18,6 +19,7 @@ class Command(BaseCommand):
     def handle(self, *args, **options):
         doctor_role, _ = Role.objects.get_or_create(role_name="doctor")
         patient_role, _ = Role.objects.get_or_create(role_name="patient")
+        pharmacy_role, _ = Role.objects.get_or_create(role_name="pharmacy")
 
         patient_user = self._user(
             username="demo_patient",
@@ -157,10 +159,12 @@ class Command(BaseCommand):
             self._slots(doctor, spec["slots"])
 
         self._appointments(patient, doctors)
+        self._pharmacies(pharmacy_role)
 
         self.stdout.write(self.style.SUCCESS("Demo data ready."))
         self.stdout.write("Patient login: demo_patient / demo12345")
         self.stdout.write("Doctor login: demo_dr_neha / demo12345")
+        self.stdout.write("Pharmacy login: demo_pharmacy / demo12345")
         call_command("ensure_superuser")
 
     def _user(self, username, role, email, first_name):
@@ -209,4 +213,50 @@ class Command(BaseCommand):
                 doctor=doctor,
                 availability=slot,
                 defaults={"appointment_date": appointment_date, "status": status},
+            )
+
+    def _pharmacies(self, pharmacy_role):
+        user = self._user(
+            username="demo_pharmacy",
+            role=pharmacy_role,
+            email="pharmacy.demo@doctorsaheb.test",
+            first_name="Seva Medical Store",
+        )
+        pharmacy, _ = Pharmacy.objects.update_or_create(
+            user=user,
+            defaults={
+                "shop_name": "Seva Medical Store",
+                "owner_name": "Ramesh Gupta",
+                "phone_no": "9876509876",
+                "whatsapp_number": "919876509876",
+                "license_number": "UP-VNS-2026-4451",
+                "district": "Varanasi",
+                "city_or_block": "Pindra",
+                "village_or_area": "Phoolpur",
+                "full_address": "Seva Medical Store, Main Road, Phoolpur, Pindra, Varanasi",
+                "opening_time": time(8, 0),
+                "closing_time": time(22, 0),
+                "is_verified": True,
+                "is_open_now": True,
+            },
+        )
+
+        medicine_specs = [
+            ("Paracetamol", "Dolo", "500mg", "Tablet", "28.00", 42, False),
+            ("Cetirizine", "Cetzine", "10mg", "Tablet", "22.00", 30, False),
+            ("Amoxicillin", "Mox", "500mg", "Capsule", "118.00", 12, True),
+            ("ORS", "Electral", "21.8g", "Sachet", "24.00", 25, False),
+        ]
+        for name, brand, strength, form, price, quantity, prescription_required in medicine_specs:
+            MedicineStock.objects.update_or_create(
+                pharmacy=pharmacy,
+                medicine_name=name,
+                brand_name=brand,
+                defaults={
+                    "strength": strength,
+                    "form": form,
+                    "price": price,
+                    "quantity": quantity,
+                    "prescription_required": prescription_required,
+                },
             )

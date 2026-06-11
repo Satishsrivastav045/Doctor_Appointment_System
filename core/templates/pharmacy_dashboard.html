@@ -1,0 +1,182 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<style>
+    .pharmacy-shell {
+        display: grid;
+        gap: 18px;
+    }
+
+    .hero-card {
+        background:
+            radial-gradient(circle at top right, rgba(34, 199, 185, 0.18), transparent 26%),
+            linear-gradient(145deg, #091522 0%, #10263a 54%, #14334a 100%);
+        border-radius: var(--radius-xl);
+        padding: 28px;
+        border: 1px solid rgba(160, 194, 220, 0.12);
+        box-shadow: var(--shadow);
+        color: #ffffff;
+    }
+
+    .dashboard-head {
+        display: flex;
+        justify-content: space-between;
+        align-items: end;
+        gap: 16px;
+    }
+
+    .dashboard-head h2 {
+        margin: 0 0 8px;
+        color: #ffffff;
+        font-size: 34px;
+    }
+
+    .dashboard-head p {
+        margin: 0;
+        color: rgba(255, 255, 255, 0.78);
+    }
+
+    .stats-grid {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 14px;
+        margin-top: 18px;
+    }
+
+    .stat-card-dark {
+        padding: 18px;
+        border-radius: 18px;
+        background: rgba(255, 255, 255, 0.1);
+        border: 1px solid rgba(202, 225, 242, 0.2);
+    }
+
+    .stat-card-dark strong {
+        display: block;
+        margin-bottom: 6px;
+        color: #ffffff;
+        font-size: 28px;
+    }
+
+    .stat-card-dark span {
+        color: rgba(255, 255, 255, 0.82);
+        font-weight: 700;
+    }
+
+    .medicine-list {
+        display: grid;
+        gap: 14px;
+    }
+
+    .medicine-row {
+        display: grid;
+        grid-template-columns: 1fr auto;
+        gap: 16px;
+        align-items: start;
+    }
+
+    .medicine-row h3 {
+        margin: 0 0 8px;
+        color: var(--navy);
+    }
+
+    .medicine-row p {
+        margin: 6px 0;
+        color: var(--muted);
+        line-height: 1.55;
+    }
+
+    .row-actions {
+        min-width: 160px;
+    }
+
+    .row-actions .btn-secondary {
+        width: 100%;
+    }
+
+    .section-title {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 14px;
+    }
+
+    .section-title h3 {
+        margin: 0;
+        color: var(--text);
+        font-size: 24px;
+    }
+
+    @media (max-width: 820px) {
+        .dashboard-head,
+        .medicine-row {
+            grid-template-columns: 1fr;
+        }
+
+        .stats-grid {
+            grid-template-columns: 1fr;
+        }
+
+        .row-actions {
+            min-width: 0;
+        }
+    }
+</style>
+
+<div class="pharmacy-shell">
+    <div class="hero-card">
+        <div class="dashboard-head">
+            <div>
+                <h2>{{ pharmacy.shop_name }}</h2>
+                <p>{{ pharmacy.full_address|default:pharmacy.location_label|default:"Apni pharmacy address update karo." }}</p>
+            </div>
+            <a href="{% url 'add_medicine' %}" class="btn">Add Medicine</a>
+        </div>
+
+        <div class="stats-grid">
+            <div class="stat-card-dark">
+                <strong>{{ pharmacy_stats.total }}</strong>
+                <span>Total medicines</span>
+            </div>
+            <div class="stat-card-dark">
+                <strong>{{ pharmacy_stats.available }}</strong>
+                <span>Available now</span>
+            </div>
+            <div class="stat-card-dark">
+                <strong>{{ pharmacy_stats.low_stock }}</strong>
+                <span>Low stock</span>
+            </div>
+        </div>
+    </div>
+
+    <div class="section-title">
+        <h3>Medicine Stock</h3>
+        <a href="/pharmacies/" class="btn btn-secondary">View Public Page</a>
+    </div>
+
+    <div class="medicine-list">
+        {% for item in medicines %}
+            <div class="card medicine-row">
+                <div>
+                    <h3>{{ item.medicine_name }}</h3>
+                    <p>
+                        {% if item.brand_name %}<strong>Brand:</strong> {{ item.brand_name }}{% endif %}
+                        {% if item.strength %} | <strong>Strength:</strong> {{ item.strength }}{% endif %}
+                        {% if item.form %} | <strong>Form:</strong> {{ item.form }}{% endif %}
+                    </p>
+                    <p><strong>Price:</strong> Rs. {{ item.price }} | <strong>Quantity:</strong> {{ item.quantity }}</p>
+                    {% if item.prescription_required %}
+                        <p><strong>Prescription required.</strong></p>
+                    {% endif %}
+                </div>
+                <div class="row-actions">
+                    <a href="{% url 'edit_medicine' item.id %}" class="btn btn-secondary">Edit</a>
+                </div>
+            </div>
+        {% empty %}
+            <div class="card">
+                <p style="margin: 0; color: var(--muted);">Abhi koi medicine add nahi hai. Add Medicine se first stock item add karo.</p>
+            </div>
+        {% endfor %}
+    </div>
+</div>
+{% endblock %}
