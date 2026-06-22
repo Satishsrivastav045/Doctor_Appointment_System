@@ -174,9 +174,16 @@
     }
 
     .action-stack .btn,
-    .action-stack .btn-secondary {
+    .action-stack .btn-secondary,
+    .action-stack form {
         width: 100%;
         margin-top: 10px;
+    }
+
+    .action-stack form .btn,
+    .action-stack form .btn-secondary {
+        width: 100%;
+        margin-top: 0;
     }
 
     .section-title {
@@ -309,12 +316,24 @@
 
             <div class="action-stack">
                 {% if app.status == 'pending' %}
-                    <a href="{% url 'update_status' app.id 'approved' %}" class="btn">Approve</a>
-                    <a href="{% url 'update_status' app.id 'rejected' %}" class="btn btn-secondary">Reject</a>
+                    <form method="POST" action="{% url 'update_status' app.id 'approved' %}">
+                        {% csrf_token %}
+                        <button type="submit" class="btn">Approve</button>
+                    </form>
+                    <form method="POST" action="{% url 'update_status' app.id 'rejected' %}">
+                        {% csrf_token %}
+                        <button type="submit" class="btn btn-secondary">Reject</button>
+                    </form>
                 {% elif app.status == 'confirmed' %}
-                    <a href="{% url 'update_status' app.id 'rejected' %}" class="btn btn-secondary">Reject Instead</a>
+                    <form method="POST" action="{% url 'update_status' app.id 'rejected' %}">
+                        {% csrf_token %}
+                        <button type="submit" class="btn btn-secondary">Reject Instead</button>
+                    </form>
                 {% else %}
-                    <a href="{% url 'update_status' app.id 'approved' %}" class="btn">Approve Instead</a>
+                    <form method="POST" action="{% url 'update_status' app.id 'approved' %}">
+                        {% csrf_token %}
+                        <button type="submit" class="btn">Approve Instead</button>
+                    </form>
                 {% endif %}
             </div>
         </div>

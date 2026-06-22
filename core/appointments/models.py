@@ -16,5 +16,13 @@ class Appointment(models.Model):
     appointment_date = models.DateField()
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default="pending")
 
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(
+                fields=["availability"],
+                name="unique_appointment_per_availability",
+            )
+        ]
+
     def __str__(self):
         return f"{self.patient} - {self.doctor}"

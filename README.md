@@ -1,6 +1,6 @@
 # Doctor Appointment System
 
-A Django-based healthcare appointment booking system for patients, doctors, and administrators. The project demonstrates role-based authentication, doctor discovery, availability management, appointment booking, status updates, dashboards, and demo AI-assisted healthcare features.
+A Django-based healthcare appointment and local medicine availability platform for patients, doctors, pharmacies, and administrators. The project demonstrates role-based authentication, doctor discovery, pharmacy stock search, availability management, appointment booking, status updates, dashboards, email notifications, automated tests, and demo AI-assisted healthcare features.
 
 ## Best Fit Roles
 
@@ -14,19 +14,24 @@ Use this project for these job profiles:
 
 Best resume line:
 
-> Built a role-based Doctor Appointment System using Django, SQLite/PostgreSQL-ready configuration, session authentication, patient and doctor dashboards, appointment booking workflow, and AI-assisted health feature demos.
+> Built a role-based healthcare platform using Django with patient, doctor, and pharmacy workflows, secure appointment state transitions, pharmacy medicine availability search, PostgreSQL-ready deployment, automated tests, and CI.
 
 ## Features
 
 - User registration and login with Django session authentication
-- Role-based access for patients and doctors
+- Role-based access for patients, doctors, and pharmacies
 - Doctor listing with search, specialization, and availability filters
 - Doctor profile and availability slot management
 - Appointment booking from available slots
 - Patient dashboard with upcoming/history appointments
 - Doctor dashboard with appointment request counts
 - Appointment approve/reject/cancel status flow
+- Pharmacy registration, pharmacy dashboard, and medicine stock management
+- Public medicine availability search with location, call, and WhatsApp actions
 - Email notifications for booking, status updates, and cancellations
+- CSRF-protected POST-only state-changing actions
+- Database uniqueness guard to prevent multiple appointments on one slot
+- Automated GitHub Actions CI for migrations, Django checks, and tests
 - Django admin panel for managing users, doctors, slots, and appointments
 - Demo data seeding command for recruiter walkthroughs
 - AI feature page for symptom prediction, risk scoring, doctor recommendation, appointment optimization, and image diagnosis demo flows
@@ -76,6 +81,7 @@ Demo logins:
 ```text
 Patient: demo_patient / demo12345
 Doctor: demo_dr_neha / demo12345
+Pharmacy: demo_pharmacy / demo12345
 ```
 
 ## Admin Panel
@@ -94,11 +100,13 @@ http://127.0.0.1:8000/admin/
 
 ## Tests
 
-Run the appointment workflow tests:
+Run the full test suite:
 
 ```bash
-python core/manage.py test appointments
+python core/manage.py test
 ```
+
+The repository also includes `.github/workflows/ci.yml`, which runs migration checks, Django system checks, and tests on pushes and pull requests to `main`.
 
 ## Render Deployment
 
@@ -127,8 +135,19 @@ gunicorn core.wsgi:application --chdir core
 2. Book an appointment from an available doctor slot.
 3. Login as a doctor and approve or reject the appointment.
 4. Open the patient dashboard to verify the status update.
-5. Open the admin panel to show database-backed management.
-6. Visit the AI features page to explain future-facing healthcare enhancements.
+5. Search `/pharmacies/` for medicine availability and show pharmacy contact actions.
+6. Login as a pharmacy and add or update medicine stock.
+7. Open the admin panel to show database-backed management.
+8. Visit the AI features page to explain future-facing healthcare enhancements.
+
+## Security and Reliability Highlights
+
+- Role-specific dashboard access for patient, doctor, and pharmacy users.
+- Appointment approve/reject/cancel and slot delete use POST requests with CSRF protection.
+- Booking uses a database transaction and row lock before marking a slot booked.
+- A unique database constraint prevents more than one appointment per availability slot.
+- Doctors cannot create availability for past dates.
+- Tests cover booking, status updates, cancellation, authorization boundaries, POST-only actions, and slot integrity.
 
 ## Email Notifications
 
@@ -148,3 +167,4 @@ DEFAULT_FROM_EMAIL=Doctor Appointment System <your-email@example.com>
 
 - Payment integration is not implemented.
 - The AI modules are demo-oriented and should be expanded with production-grade models before real medical use.
+- Pharmacy stock is informational; order placement and payment are future extensions.

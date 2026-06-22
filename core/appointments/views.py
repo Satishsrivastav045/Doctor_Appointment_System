@@ -3,8 +3,11 @@ from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.core.mail import send_mail
 from django.conf import settings
+from django.db import IntegrityError, transaction
+from django.views.decorators.http import require_POST
 from django.utils.timezone import localdate
 from accounts.models import Patient
+from accounts.permissions import role_required
 from doctors.models import Doctor, Availability
 from .models import Appointment
 from .ai_engine import (
@@ -218,11 +221,8 @@ def ai_features(request):
 
 
 @login_required
+@role_required("patient", redirect_url="/doctor-dashboard/")
 def book_appointment(request, doctor_id):
-    if not Patient.objects.filter(user=request.user).exists():
-        messages.error(request, "Only patients can book appointments.")
-        return redirect('/doctor-dashboard/')
-
     doctor = get_object_or_404(Doctor, id=doctor_id, is_verified=True)
     patient = get_object_or_404(Patient, user=request.user)
 
@@ -234,16 +234,28 @@ def book_appointment(request, doctor_id):
     if request.method == "POST":
         slot_id = request.POST.get("slot_id")
 
-        slot = get_object_or_404(Availability, id=slot_id, doctor=doctor, is_booked=False)
+        try:
+            with transaction.atomic():
+                slot = get_object_or_404(
+                    Availability.objects.select_for_update(),
+                    id=slot_id,
+                    doctor=doctor,
+                    is_booked=False,
+                    available_date__gte=localdate(),
+                )
 
-        appointment = Appointment.objects.create(
-            patient=patient,
-            doctor=doctor,
-            availability=slot,
-            appointment_date=slot.available_date
-        )
-        slot.is_booked = True
-        slot.save(update_fields=["is_booked"])
+                appointment = Appointment.objects.create(
+                    patient=patient,
+                    doctor=doctor,
+                    availability=slot,
+                    appointment_date=slot.available_date,
+                )
+                slot.is_booked = True
+                slot.save(update_fields=["is_booked"])
+        except IntegrityError:
+            messages.error(request, "This slot was just booked. Please choose another slot.")
+            return redirect("book_appointment", doctor_id=doctor.id)
+
 
         messages.success(request, "Appointment booked successfully.")
         _send_notification(
@@ -272,11 +284,9 @@ def book_appointment(request, doctor_id):
 
 
 @login_required
+@role_required("doctor", redirect_url="/login/")
+@require_POST
 def update_status(request, id, status):
-    if not Doctor.objects.filter(user=request.user).exists():
-        messages.error(request, "Only doctors can update appointment status.")
-        return redirect("/login/")
-
     doctor = get_object_or_404(Doctor, user=request.user)
     appointment = get_object_or_404(Appointment, id=id, doctor=doctor)
 
@@ -313,11 +323,9 @@ def update_status(request, id, status):
 
 
 @login_required
+@role_required("patient", redirect_url="/login/")
+@require_POST
 def cancel_appointment(request, id):
-    if not Patient.objects.filter(user=request.user).exists():
-        messages.error(request, "Only patients can cancel appointments.")
-        return redirect("/login/")
-
     patient = get_object_or_404(Patient, user=request.user)
     appointment = get_object_or_404(Appointment, id=id, patient=patient)
 

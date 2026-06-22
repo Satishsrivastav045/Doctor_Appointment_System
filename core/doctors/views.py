@@ -6,6 +6,8 @@ from django.contrib.auth.decorators import login_required
 from django.db.models import Q
 from django.shortcuts import get_object_or_404, redirect, render
 from django.utils.timezone import localdate
+from django.views.decorators.http import require_POST
+from accounts.permissions import role_required
 from .models import Availability, Doctor
 
 
@@ -157,11 +159,8 @@ def doctor_detail(request, doctor_id):
 
 
 @login_required
+@role_required("doctor", redirect_url="/login/")
 def manage_availability(request):
-    if not Doctor.objects.filter(user=request.user).exists():
-        messages.error(request, "Only doctors can manage availability.")
-        return redirect("/login/")
-
     doctor = get_object_or_404(Doctor, user=request.user)
 
     if request.method == "POST":
@@ -219,6 +218,10 @@ def manage_availability(request):
             messages.error(request, "Date, start time, and end time are required.")
             return redirect("manage_availability")
 
+        if available_date < localdate().isoformat():
+            messages.error(request, "Past dates cannot be used for availability.")
+            return redirect("manage_availability")
+
         start_obj = datetime.strptime(start_time, "%H:%M").time()
         end_obj = datetime.strptime(end_time, "%H:%M").time()
 
@@ -259,11 +262,8 @@ def manage_availability(request):
 
 
 @login_required
+@role_required("doctor", redirect_url="/login/")
 def edit_availability(request, slot_id):
-    if not Doctor.objects.filter(user=request.user).exists():
-        messages.error(request, "Only doctors can edit availability.")
-        return redirect("/login/")
-
     doctor = get_object_or_404(Doctor, user=request.user)
     slot = get_object_or_404(Availability, id=slot_id, doctor=doctor)
 
@@ -278,6 +278,10 @@ def edit_availability(request, slot_id):
 
         if not available_date or not start_time or not end_time:
             messages.error(request, "Date, start time, and end time are required.")
+            return redirect("edit_availability", slot_id=slot.id)
+
+        if available_date < localdate().isoformat():
+            messages.error(request, "Past dates cannot be used for availability.")
             return redirect("edit_availability", slot_id=slot.id)
 
         start_obj = datetime.strptime(start_time, "%H:%M").time()
@@ -315,11 +319,9 @@ def edit_availability(request, slot_id):
 
 
 @login_required
+@role_required("doctor", redirect_url="/login/")
+@require_POST
 def delete_availability(request, slot_id):
-    if not Doctor.objects.filter(user=request.user).exists():
-        messages.error(request, "Only doctors can delete availability.")
-        return redirect("/login/")
-
     doctor = get_object_or_404(Doctor, user=request.user)
     slot = get_object_or_404(Availability, id=slot_id, doctor=doctor)
 

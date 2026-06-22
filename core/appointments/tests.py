@@ -1,6 +1,7 @@
 from datetime import date, time, timedelta
 
 from django.core import mail
+from django.db import IntegrityError, transaction
 from django.test import override_settings
 from django.urls import reverse
 from django.test import TestCase
@@ -73,13 +74,96 @@ class AppointmentFlowTests(TestCase):
         )
         self.client.login(username="doctor_user", password="testpass123")
 
-        response = self.client.get(reverse("update_status", args=[appointment.id, "approved"]))
+        response = self.client.post(reverse("update_status", args=[appointment.id, "approved"]))
 
         self.assertRedirects(response, reverse("doctor_dashboard"))
         appointment.refresh_from_db()
         self.assertEqual(appointment.status, "confirmed")
         self.assertEqual(len(mail.outbox), 1)
         self.assertIn("Appointment Confirmed", mail.outbox[0].subject)
+
+    def test_status_update_requires_post(self):
+        appointment = Appointment.objects.create(
+            patient=self.patient,
+            doctor=self.doctor,
+            availability=self.slot,
+            appointment_date=self.slot.available_date,
+        )
+        self.client.login(username="doctor_user", password="testpass123")
+
+        response = self.client.get(reverse("update_status", args=[appointment.id, "approved"]))
+
+        self.assertEqual(response.status_code, 405)
+        appointment.refresh_from_db()
+        self.assertEqual(appointment.status, "pending")
+
+    def test_patient_cannot_update_appointment_status(self):
+        appointment = Appointment.objects.create(
+            patient=self.patient,
+            doctor=self.doctor,
+            availability=self.slot,
+            appointment_date=self.slot.available_date,
+        )
+        self.client.login(username="patient_user", password="testpass123")
+
+        response = self.client.post(reverse("update_status", args=[appointment.id, "approved"]))
+
+        self.assertEqual(response.status_code, 302)
+        appointment.refresh_from_db()
+        self.assertEqual(appointment.status, "pending")
+
+    def test_patient_can_cancel_own_appointment(self):
+        appointment = Appointment.objects.create(
+            patient=self.patient,
+            doctor=self.doctor,
+            availability=self.slot,
+            appointment_date=self.slot.available_date,
+            status="confirmed",
+        )
+        self.slot.is_booked = True
+        self.slot.save(update_fields=["is_booked"])
+        self.client.login(username="patient_user", password="testpass123")
+
+        response = self.client.post(reverse("cancel_appointment", args=[appointment.id]))
+
+        self.assertRedirects(response, reverse("patient_dashboard"))
+        appointment.refresh_from_db()
+        self.slot.refresh_from_db()
+        self.assertEqual(appointment.status, "cancelled")
+        self.assertFalse(self.slot.is_booked)
+
+    def test_cancel_requires_post(self):
+        appointment = Appointment.objects.create(
+            patient=self.patient,
+            doctor=self.doctor,
+            availability=self.slot,
+            appointment_date=self.slot.available_date,
+            status="confirmed",
+        )
+        self.client.login(username="patient_user", password="testpass123")
+
+        response = self.client.get(reverse("cancel_appointment", args=[appointment.id]))
+
+        self.assertEqual(response.status_code, 405)
+        appointment.refresh_from_db()
+        self.assertEqual(appointment.status, "confirmed")
+
+    def test_slot_cannot_have_multiple_appointments(self):
+        Appointment.objects.create(
+            patient=self.patient,
+            doctor=self.doctor,
+            availability=self.slot,
+            appointment_date=self.slot.available_date,
+        )
+
+        with self.assertRaises(IntegrityError):
+            with transaction.atomic():
+                Appointment.objects.create(
+                    patient=self.patient,
+                    doctor=self.doctor,
+                    availability=self.slot,
+                    appointment_date=self.slot.available_date,
+                )
 
     def test_doctor_user_cannot_book_patient_appointment(self):
         self.client.login(username="doctor_user", password="testpass123")

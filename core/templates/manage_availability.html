@@ -150,6 +150,10 @@
         justify-content: flex-end;
     }
 
+    .slot-actions form {
+        margin: 0;
+    }
+
     .slot-open {
         background: #e6faf5;
         color: #0e7a64;
@@ -429,7 +433,10 @@
                         {% else %}
                             <span class="slot-badge slot-open">Open</span>
                             <a href="{% url 'edit_availability' slot.id %}" class="btn btn-secondary">Edit</a>
-                            <a href="{% url 'delete_availability' slot.id %}" class="btn btn-secondary">Delete</a>
+                            <form method="POST" action="{% url 'delete_availability' slot.id %}">
+                                {% csrf_token %}
+                                <button type="submit" class="btn btn-secondary">Delete</button>
+                            </form>
                         {% endif %}
                     </div>
                 </div>

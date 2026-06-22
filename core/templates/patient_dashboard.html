@@ -150,9 +150,16 @@
     }
 
     .patient-actions .btn,
-    .patient-actions .btn-secondary {
+    .patient-actions .btn-secondary,
+    .patient-actions form {
         width: 100%;
         margin-top: 10px;
+    }
+
+    .patient-actions form .btn,
+    .patient-actions form .btn-secondary {
+        width: 100%;
+        margin-top: 0;
     }
 
     .tabs {
@@ -330,7 +337,10 @@
         </div>
         <div class="patient-actions">
             {% if app.status != 'cancelled' %}
-                <a href="{% url 'cancel_appointment' app.id %}" class="btn btn-secondary">Cancel Appointment</a>
+                <form method="POST" action="{% url 'cancel_appointment' app.id %}">
+                    {% csrf_token %}
+                    <button type="submit" class="btn btn-secondary">Cancel Appointment</button>
+                </form>
             {% endif %}
             <a href="{% url 'doctor_detail' app.doctor.id %}" class="btn btn-secondary">View Doctor</a>
         </div>
